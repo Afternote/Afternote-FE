@@ -60,8 +60,10 @@
 # 한다(값 파싱은 enum 상수의 이름 문자열 비교). R8 은 클래스·상수 이름만 바꾸고 그 문자열은
 # 안 바꾸므로, 규칙이 없으면 release 빌드가 NavHost 조립에서 IllegalArgumentException 으로
 # 죽는다 — 로그인 여부와 무관하게 모든 기동이 실패한다 (#1753).
-# 지금 nav 인자로 쓰이는 enum 은 AfternoteType 하나지만 대상을 하나만 적으면 다음에 enum 인자를
-# 추가하는 사람이 같은 크래시를 다시 만든다. 예외 타입 규칙과 같은 이유·같은 모양으로 앱 전체에 건다.
+# #1753 때 걸린 enum 은 AfternoteType 이었는데, 그 route 는 Nav3 이관(#1698)으로 NavKey 가 되어 지금
+# Nav2 route 인자에는 enum 이 없다(Nav3 NavKeySerializer 는 런타임 클래스 이름으로 쓰고 읽어 이 경로를
+# 타지 않는다). 그래도 대상을 하나만 적으면 다음에 enum 인자를 추가하는 사람이 같은 크래시를 다시
+# 만든다. 예외 타입 규칙과 같은 이유·같은 모양으로 앱 전체에 건다.
 # 이름만 필요하므로 멤버 난독화와 미사용 클래스 제거는 그대로 둔다.
 -keepnames class com.afternote.** extends java.lang.Enum
 -keepclassmembernames class com.afternote.** extends java.lang.Enum {

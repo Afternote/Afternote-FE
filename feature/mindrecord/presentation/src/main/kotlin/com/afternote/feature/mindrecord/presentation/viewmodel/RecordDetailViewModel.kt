@@ -117,4 +117,4 @@ class RecordDetailViewModel
     }
 
 /** 헤더 배경에 깔 이미지 — 본문 첫 이미지를 쓴다. 없으면 시안의 "이미지 X" 변형이다 (#759). */
-internal fun List<RecordContentBlock>.firstImageUrl(): String? = filterIsInstance<RecordContentBlock.Image>().firstOrNull()?.url
+private fun List<RecordContentBlock>.firstImageUrl(): String? = filterIsInstance<RecordContentBlock.Image>().firstOrNull()?.url

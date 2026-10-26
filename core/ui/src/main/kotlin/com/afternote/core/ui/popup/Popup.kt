@@ -70,10 +70,13 @@ fun Popup(
 }
 
 /**
- * Dialog 래퍼 없이 카드 본체만 렌더링합니다. 프리뷰 및 테스트 전용.
+ * Dialog 래퍼 없이 카드 본체만 렌더링하는 [Popup] 내부 구현.
+ *
+ * 파일 밖으로 열지 않는다 — 팝업의 공개 계약은 [Popup] 하나이고, 문구·버튼 동작 검증도
+ * [Popup] 을 그려서 한다 (#1672).
  */
 @Composable
-internal fun PopupContent(
+private fun PopupContent(
     type: PopupType,
     message: String,
     onConfirm: () -> Unit,

@@ -1,7 +1,7 @@
 package com.afternote.feature.receiver.data.repositoryimpl
 
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.feature.receiver.data.dto.DeliveryVerificationRequestDto

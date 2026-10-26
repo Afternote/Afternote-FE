@@ -18,9 +18,7 @@ import org.robolectric.annotation.GraphicsMode
 /**
  * 바텀 탭 전환의 백스택 저장/복원 회귀 기준 (#1601).
  *
- * 대상은 [AppState.navigateToBottomBarRoute] 의 `popUpTo<Route.Home> { saveState }` +
- * `restoreState` 조합이다. Navigation 3 전환은 이 조합을 통째로 다른 기전으로 바꾸므로,
- * **전환 전 현행 동작**을 여기에 못박아 둔다.
+ * 각 탭이 독립된 Navigation 3 백스택을 유지하고, 전환 후 해당 탭 화면이 복원되는지 확인한다.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -44,10 +42,8 @@ class BottomTabBackStackRestorationTest {
 
         composeRule.runOnIdle { harness.appState.navigateToBottomBarRoute(Route.TimeLetter) }
         composeRule.runOnIdle { harness.timeLetterActions.onNavigateToDraft() }
-        composeRule.onNodeWithText("TimeLetterDraftRoute#0").performClick()
-        composeRule.onNodeWithText("TimeLetterDraftRoute#1").assertExists()
 
-        // 홈 탭으로 나가면 타임레터 스택은 통째로 pop 되고(=화면이 사라진다) 저장만 된다.
+        // 홈 탭으로 전환해도 타임레터의 로컬 Nav2 백스택은 유지된다.
         composeRule.runOnIdle { harness.appState.navigateToBottomBarRoute(Route.Home) }
         assertEquals(
             listOf("NavHostRoot", "Home"),
@@ -56,13 +52,11 @@ class BottomTabBackStackRestorationTest {
 
         composeRule.runOnIdle { harness.appState.navigateToBottomBarRoute(Route.TimeLetter) }
 
-        // 탭 루트가 아니라 «떠날 때 보고 있던 화면» 으로 돌아온다.
+        // 탭을 다시 열면 떠날 때 보고 있던 화면으로 돌아온다.
         assertEquals(
-            listOf("NavHostRoot", "Home", "TimeLetter", "TimeLetterHomeRoute", "TimeLetterDraftRoute"),
+            listOf("NavHostRoot", "TimeLetter", "TimeLetterHomeRoute", "TimeLetterDraftRoute"),
             composeRule.runOnIdle { harness.navController.backStackRouteNames() },
         )
-        // 화면 안의 rememberSaveable 상태까지 살아 돌아온다 (saveState = true 의 실제 효과).
-        composeRule.onNodeWithText("TimeLetterDraftRoute#1").assertExists()
     }
 
     @Test
@@ -73,9 +67,9 @@ class BottomTabBackStackRestorationTest {
         composeRule.runOnIdle { harness.appState.navigateToBottomBarRoute(Route.TimeLetter) }
         composeRule.runOnIdle { harness.appState.navigateToBottomBarRoute(Route.MindRecord) }
 
-        // 탭을 몇 번 오가도 백스택은 [홈, 현재 탭] 두 칸이다 — 탭이 서로 쌓이지 않는다.
+        // 탭 전환은 서로 다른 루트 스택을 활성화한다.
         assertEquals(
-            listOf("NavHostRoot", "Home", "MindRecord"),
+            listOf("NavHostRoot", "MindRecord"),
             composeRule.runOnIdle { harness.navController.backStackRouteNames() },
         )
 
@@ -86,30 +80,24 @@ class BottomTabBackStackRestorationTest {
     }
 
     @Test
-    fun `애프터노트 탭만은 재진입 때 저장된 스택 대신 지문 관문으로 돌아간다`() {
+    fun `애프터노트 탭만은 재진입 때 저장된 화면 상태를 복원하지 않는다`() {
         start()
 
         composeRule.runOnIdle { harness.appState.navigateToBottomBarRoute(Route.Afternote) }
-        assertEquals(
-            "FingerprintLoginRoute",
-            composeRule.runOnIdle { harness.navController.currentRouteName() },
-        )
-
-        composeRule.runOnIdle { harness.afternoteActions.replaceFingerprintLoginWithAfternoteHome() }
-        composeRule.runOnIdle { harness.afternoteActions.navigateToAfternoteDetail(itemId = 7L) }
-        assertEquals(
-            "DetailRoute",
-            composeRule.runOnIdle { harness.navController.currentRouteName() },
-        )
+        composeRule.onNodeWithText("Afternote#0").performClick()
+        composeRule.onNodeWithText("Afternote#1").assertExists()
 
         composeRule.runOnIdle { harness.appState.navigateToBottomBarRoute(Route.Home) }
         composeRule.runOnIdle { harness.appState.navigateToBottomBarRoute(Route.Afternote) }
 
-        // restoreState = false 라 상세·홈이 복원되지 않고 인증 관문이 다시 선다.
+        // restoreState = false — 저장된 화면 상태가 복원되지 않고 host 가 새로 선다. 그래서
+        // 로컬 스택도 시작 화면(지문 관문)부터 다시 쌓인다. 그 시작점 자체는
+        // AfternoteLocalNavActionsTest 가 본다.
         assertEquals(
-            listOf("NavHostRoot", "Home", "Afternote", "FingerprintLoginRoute"),
+            listOf("NavHostRoot", "Afternote"),
             composeRule.runOnIdle { harness.navController.backStackRouteNames() },
         )
+        composeRule.onNodeWithText("Afternote#0").assertExists()
     }
 
     @Test
@@ -122,19 +110,17 @@ class BottomTabBackStackRestorationTest {
 
         composeRule.runOnIdle { harness.appState.navigateToBottomBarRoute(Route.TimeLetter) }
         composeRule.runOnIdle { harness.timeLetterActions.onNavigateToDraft() }
-        composeRule.onNodeWithText("TimeLetterDraftRoute#0").performClick()
-        val beforeRestore = composeRule.runOnIdle { harness.navController }
+        val beforeRestore = composeRule.runOnIdle { harness.timeLetterRoutes }
 
         restorationTester.emulateSavedInstanceStateRestore()
         composeRule.waitForIdle()
 
         // 재생성이 실제로 일어났는지부터 확인한다 — 같은 NavController 를 계속 쓰고 있다면
         // 아래 단언은 아무것도 증명하지 못한다.
-        assertNotSame(beforeRestore, composeRule.runOnIdle { harness.navController })
+        assertNotSame(beforeRestore, composeRule.runOnIdle { harness.timeLetterRoutes })
         assertEquals(
-            listOf("NavHostRoot", "Home", "TimeLetter", "TimeLetterHomeRoute", "TimeLetterDraftRoute"),
+            listOf("NavHostRoot", "TimeLetter", "TimeLetterHomeRoute", "TimeLetterDraftRoute"),
             composeRule.runOnIdle { harness.navController.backStackRouteNames() },
         )
-        composeRule.onNodeWithText("TimeLetterDraftRoute#1").assertExists()
     }
 }

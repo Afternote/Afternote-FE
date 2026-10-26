@@ -10,5 +10,8 @@ sealed interface ReceiverHomeEvent {
 
     data object ConfirmDownload : ReceiverHomeEvent
 
+    /** 오류 팝업의 「다시 시도하기」 — 실패한 그 단계를 다시 건다 (#1737). */
+    data object RetryDownload : ReceiverHomeEvent
+
     data object ConsumeDownloadResult : ReceiverHomeEvent
 }

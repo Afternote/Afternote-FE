@@ -271,7 +271,7 @@ export function renderIssueBody(finding) {
         "",
         "### 주 담당 모듈",
         "",
-        "platform — Android 앱·CI·빌드·릴리스·저장소 운영",
+        "platform — CI·빌드·릴리스·저장소 운영",
         "",
         "### 개요",
         "",
@@ -495,7 +495,7 @@ async function main() {
         findings,
         token,
         repository,
-        assignee: process.env.DEPENDENCY_AUDIT_ASSIGNEE ?? "1hyok",
+        assignee: process.env.DEPENDENCY_AUDIT_ASSIGNEE ?? "OnlyReadOneBook",
     });
     for (const result of results) {
         console.log(`${result.action}: #${result.number} ${result.url}`);

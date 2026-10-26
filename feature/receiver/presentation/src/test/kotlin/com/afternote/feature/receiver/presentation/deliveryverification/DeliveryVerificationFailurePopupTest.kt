@@ -8,6 +8,7 @@ import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.testing.FakeIdentityVerificationRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverDeliveryDocumentUploadRepository
+import com.afternote.feature.receiver.domain.usecase.SubmitDeliveryVerificationUseCase
 import com.afternote.feature.receiver.presentation.R
 import com.afternote.feature.receiver.presentation.error.ReceiverErrorPopup
 import kotlinx.coroutines.Dispatchers
@@ -175,7 +176,12 @@ class DeliveryVerificationFailurePopupTest {
     private fun documentUploadViewModel(
         upload: FakeReceiverDeliveryDocumentUploadRepository,
         auth: FakeReceiverAuthRepository = FakeReceiverAuthRepository.strict(),
-    ): DocumentUploadViewModel = DocumentUploadViewModel(upload, auth, NoopErrorReporter)
+    ): DocumentUploadViewModel =
+        DocumentUploadViewModel(
+            uploadRepository = upload,
+            submitDeliveryVerification = SubmitDeliveryVerificationUseCase(auth),
+            errorReporter = NoopErrorReporter,
+        )
 
     /** 사망진단서 한 장이 이미 올라간 상태 — 제출 실패 갈래를 보려면 여기부터 시작해야 한다. */
     private fun submittableViewModel(auth: FakeReceiverAuthRepository): DocumentUploadViewModel {

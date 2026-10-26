@@ -1,32 +1,31 @@
 package com.afternote.core.ui.receiver
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -35,14 +34,12 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.common.util.KoreanConsonantUtil
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.KoreanConsonantIndex
-import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.R
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
-import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import kotlinx.coroutines.launch
 
@@ -61,8 +58,8 @@ import kotlinx.coroutines.launch
  * 복수화(#1426)는 새 오버로드를 더한 것이지 기존 계약을 바꾼 게 아니다.
  *
  * 문구 3종은 시안(3631:24820) 기준 공용 기본값을 쓴다 — 작성 플로우(애프터노트·타임레터·
- * 마음의 기록)는 모두 같은 문구라 그대로 두면 된다. 설정만 "수신자 목록" 으로 [title] 을
- * 덮는데, 그 화면은 #631 로 선택이 아닌 관리 화면이 되면서 이 컴포넌트 소비를 그만둔다.
+ * 마음의 기록)는 모두 같은 문구라 그대로 두면 된다. 설정은 "수신자 목록" 으로 [title] 을
+ * 덮는데, #631 이후로는 사후 전달 조건 진입 시의 선택 플로우에서만 이 컴포넌트를 소비한다.
  *
  * @param listReplacement 검색 필드 아래 목록 영역을 통째로 대체할 상태 화면 —
  *   로딩·조회 실패·빈 목록처럼 소비 기능마다 다른 상태를 끼운다. null 이면 목록을 그린다.
@@ -202,37 +199,56 @@ private fun ReceiverSelectList(
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
-    var selectedConsonant by remember { mutableStateOf<Char?>(null) }
 
-    val groupedReceivers =
+    // 목록에 그릴 행을 초성과 함께 한 줄로 펴 둔다 — LazyColumn 도 인덱스 맵도 이 목록만 본다.
+    val receiverRows =
         remember(receivers, searchQuery) {
             val filtered =
                 if (searchQuery.isBlank()) receivers else receivers.filter { it.name.contains(searchQuery) }
-            KoreanConsonantUtil.groupByInitialConsonant(filtered) { it.name }
+            KoreanConsonantUtil
+                .groupByInitialConsonant(filtered) { it.name }
+                .flatMap { (consonant, items) -> items.map { consonant to it } }
         }
 
-    // 섹션 헤더 없이 항목만 그리므로 스크롤 인덱스도 items.size 로만 누적한다.
+    // 점프 위치는 그룹 길이를 따로 더하지 않고 위에서 편 행 순서에서 그대로 읽는다 —
+    // 계산과 렌더가 갈라져 있으면 렌더 구조가 바뀔 때 인덱스만 남아 어긋난다 (#939).
     val consonantIndexMap =
-        remember(groupedReceivers) {
-            var index = 0
+        remember(receiverRows) {
             buildMap {
-                groupedReceivers.forEach { (consonant, items) ->
-                    put(consonant, index)
-                    index += items.size
+                receiverRows.forEachIndexed { index, (consonant, _) ->
+                    if (consonant !in this) put(consonant, index)
                 }
             }
         }
 
-    LaunchedEffect(listState, consonantIndexMap) {
-        snapshotFlow { listState.firstVisibleItemIndex }
-            .collect { firstVisibleItemIndex ->
-                selectedConsonant =
-                    consonantIndexMap.entries
-                        .filter { it.value <= firstVisibleItemIndex }
-                        .maxByOrNull { it.value }
-                        ?.key
+    // A tap may stop before its section reaches the top when the list clamps at its end.
+    // Keep that explicit target until the user scrolls the list or changes its contents.
+    var tappedConsonant by remember(receiverRows) { mutableStateOf<Char?>(null) }
+    val scrolledConsonant by remember(listState, consonantIndexMap) {
+        derivedStateOf {
+            if (!listState.canScrollForward && listState.canScrollBackward) {
+                consonantIndexMap.keys.lastOrNull()
+            } else {
+                consonantIndexMap.entries
+                    .lastOrNull { it.value <= listState.firstVisibleItemIndex }
+                    ?.key
             }
+        }
     }
+    val listScrollConnection =
+        remember(receiverRows) {
+            object : NestedScrollConnection {
+                override fun onPreScroll(
+                    available: Offset,
+                    source: NestedScrollSource,
+                ): Offset {
+                    if (source == NestedScrollSource.UserInput && available.y != 0f) {
+                        tappedConsonant = null
+                    }
+                    return Offset.Zero
+                }
+            }
+        }
 
     Row(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -240,16 +256,15 @@ private fun ReceiverSelectList(
             modifier =
                 Modifier
                     .weight(1f)
+                    .nestedScroll(listScrollConnection)
                     .padding(start = 20.dp),
         ) {
-            groupedReceivers.forEach { (_, items) ->
-                items(items, key = { it.id }) { receiver ->
-                    ReceiverSelectRow(
-                        receiver = receiver,
-                        isSelected = receiver.id in selectedReceiverIds,
-                        onToggle = { onReceiverToggle(receiver.id) },
-                    )
-                }
+            items(receiverRows, key = { (_, receiver) -> receiver.id }) { (_, receiver) ->
+                ReceiverSelectRow(
+                    receiver = receiver,
+                    isSelected = receiver.id in selectedReceiverIds,
+                    onToggle = { onReceiverToggle(receiver.id) },
+                )
             }
             item { Spacer(modifier = Modifier.padding(14.dp)) }
         }
@@ -261,9 +276,9 @@ private fun ReceiverSelectList(
             contentAlignment = Alignment.Center,
         ) {
             KoreanConsonantIndex(
-                selectedConsonant = selectedConsonant,
+                selectedConsonant = tappedConsonant ?: scrolledConsonant,
                 onConsonantSelect = { consonant ->
-                    selectedConsonant = consonant
+                    tappedConsonant = consonant
                     consonantIndexMap[consonant]?.let { index ->
                         coroutineScope.launch { listState.scrollToItem(index) }
                     }
@@ -280,35 +295,19 @@ private fun ReceiverSelectRow(
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .clickable(onClick = onToggle)
-                // 체크 아이콘엔 contentDescription 이 없어 «선택됨» 을 읽을 다른 통로가 없다.
-                // 복수 선택에서는 어느 행이 선택돼 있는지가 화면의 핵심 정보라 행에 노출한다 (#1426).
-                .semantics { selected = isSelected }
-                .padding(top = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        ProfileImage(size = 50.dp)
-        Spacer(modifier = Modifier.width(10.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = receiver.name,
-                style = AfternoteDesign.typography.captionLargeB,
+    ReceiverProfileRow(
+        name = receiver.name,
+        relation = receiver.relation,
+        onClick = onToggle,
+        // 체크 아이콘엔 contentDescription 이 없어 «선택됨» 을 읽을 다른 통로가 없다.
+        // 복수 선택에서는 어느 행이 선택돼 있는지가 화면의 핵심 정보라 행에 노출한다 (#1426).
+        modifier = modifier.semantics { selected = isSelected },
+        trailing = {
+            AfternoteCircularCheckbox(
+                state = if (isSelected) CheckboxState.Default else CheckboxState.None,
+                onClick = onToggle,
+                size = 20.dp,
             )
-            Spacer(modifier = Modifier.padding(top = 5.dp))
-            Text(
-                text = receiver.relation,
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray8,
-            )
-        }
-        AfternoteCircularCheckbox(
-            state = if (isSelected) CheckboxState.Default else CheckboxState.None,
-            onClick = onToggle,
-            size = 20.dp,
-        )
-    }
+        },
+    )
 }

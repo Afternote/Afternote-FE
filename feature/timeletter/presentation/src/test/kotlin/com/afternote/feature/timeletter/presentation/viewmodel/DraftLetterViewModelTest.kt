@@ -233,7 +233,6 @@ class DraftLetterViewModelTest {
                             id = 1L,
                             title = "draft",
                             sendAt = null,
-                            deliveredAt = null,
                             status = TimeLetterStatus.DRAFT,
                             blocks = emptyList(),
                             receiverIds = listOf(1L),

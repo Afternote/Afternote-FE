@@ -1,6 +1,7 @@
 [versions]
 agp = "9.3.2"
-biometric = "1.1.0"
+# Core 1.19의 FingerprintManagerCompat는 no-op이므로 내부 호환 구현이 있는 Biometric이 필요하다.
+biometric = "1.4.0-alpha07"
 exifinterface = "1.4.2"
 coreKtx = "1.19.0"
 fragmentKtx = "1.8.9"
@@ -13,13 +14,15 @@ robolectric = "4.15.1"
 espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.11.0"
 activityCompose = "1.13.0"
-kotlin = "2.4.10"
+kotlin = "2.4.20"
 composeBom = "2026.06.01"
-jetbrainsKotlinJvm = "2.4.10"
+jetbrainsKotlinJvm = "2.4.20"
 hilt = "2.60.1"
 hiltNavigation = "1.4.0"
 ksp = "2.3.10"
 navigation = "2.9.8"
+# Navigation 3 — 로컬 스택 이관(#1698). Nav2 는 루트 NavHost 가 #1702 까지 계속 쓰므로 공존한다.
+navigation3 = "1.1.6"
 okhttp = "5.4.0"
 retrofit = "3.0.0"
 kotlinxSerializationJson = "1.11.0"
@@ -46,15 +49,18 @@ screenshot = "0.0.1-alpha16"
 googleServices = "4.5.0"
 firebaseAppDistribution = "5.3.0"
 firebaseCrashlytics = "3.0.7"
-firebaseBom = "34.16.0"
+firebaseBom = "35.1.0"
 konsist = "0.17.3"
 kover = "0.9.9"
 baselineProfile = "1.5.0-rc02"
 profileInstaller = "1.4.1"
-# 빌드·테스트 클래스패스 전용 보안 하한 — GHSA-574f-3g2m-x479(critical) 등 3건이 1.84 에서 패치(#921).
+# 빌드·테스트 클래스패스 전용 보안 하한 — GHSA-9pwp-9qqc-pr26·GHSA-qp49-qgx5-5m26 이 1.85 에서 패치(#2132).
 # 루트 build.gradle.kts 의 buildscript 블록은 카탈로그 accessor 를 못 써 같은 값을 리터럴로 둔다.
-bouncycastle = "1.84"
+bouncycastle = "1.85"
 netty = "4.1.137.Final"
+guavaAndroid = "32.0.1-android"
+jsoup = "1.23.2"
+wire = "6.4.5"
 commonsLang3 = "3.18.0"
 jose4j = "0.9.6"
 jdom2 = "2.0.6.1"
@@ -62,6 +68,10 @@ httpclient = "4.5.14"
 logback = "1.5.34"
 testcontainers = "2.0.5"
 protobufJavalite = "3.25.9"
+# 빌드 클래스패스 전용 보안 하한 — GHSA-27j2-h3m2-8237(critical)이 2.3.35 에서 패치(#2204). kover 0.9.9 가
+# kover-features-jvm → intellij-coverage-reporter → coverage-report 1.0.25 경유로 2.3.32 를 고정하고, kover·
+# coverage-report 최신판도 같은 값이라 상류 업그레이드로는 못 푼다. build-logic 의 constraint 가 쓴다.
+freemarker = "2.3.35"
 
 [libraries]
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
@@ -97,6 +107,9 @@ hilt-android-testing = { group = "com.google.dagger", name = "hilt-android-testi
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 hilt-navigation = { group = "androidx.hilt", name = "hilt-lifecycle-viewmodel-compose", version.ref = "hiltNavigation" }
 android-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
+androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "navigation3" }
+androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-ui", version.ref = "navigation3" }
+androidx-lifecycle-viewmodel-navigation3 = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelKtx" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-converter-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
@@ -106,6 +119,7 @@ ktlint-gradle = { group = "org.jlleitschuh.gradle", name = "ktlint-gradle", vers
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
 kakao-sdk-user = { group = "com.kakao.sdk", name = "v2-user", version.ref = "kakaoSdk" }
 kakao-sdk-auth = { group = "com.kakao.sdk", name = "v2-auth", version.ref = "kakaoSdk" }
+kakao-sdk-share = { group = "com.kakao.sdk", name = "v2-share", version.ref = "kakaoSdk" }
 androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
 androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentials" }
 googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
@@ -114,6 +128,7 @@ androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navig
 coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coilNetworkOkhttp" }
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coilCompose" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+androidx-work-testing = { group = "androidx.work", name = "work-testing", version.ref = "work" }
 compose-wheel-picker = { group = "com.github.zj565061763", name = "compose-wheel-picker", version.ref = "composeWheelPicker" }
 coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }

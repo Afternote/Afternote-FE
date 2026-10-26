@@ -21,12 +21,6 @@ sealed interface UiText {
         val value: String,
     ) : UiText
 
-    /** 서버/예외가 메시지를 주면 그대로, 없으면 리소스 fallback. `e.message ?: getString(R.string.x)` 대응. */
-    data class DynamicOrResource(
-        val value: String?,
-        @param:StringRes val fallbackResId: Int,
-    ) : UiText
-
     companion object {
         fun resource(
             @StringRes resId: Int,
@@ -49,9 +43,5 @@ fun UiText.asString(): String =
 
         is UiText.Dynamic -> {
             value
-        }
-
-        is UiText.DynamicOrResource -> {
-            value ?: stringResource(fallbackResId)
         }
     }

@@ -7,6 +7,9 @@
 # 판정은 handle-merge-queue-dequeue.mjs 가 한다 — 이 PR 의 큐 브랜치 merge_group run 에 실패 job 이
 # 있으면 링크를 코멘트로 남기고, 없으면(조용한 방출) 같은 head 당 한 번만 재투입하고,
 # MANUAL·ALREADY_MERGED·MERGE 는 아무것도 하지 않는다.
+#
+# 재투입은 여기서 하지 않고 merge-queue-requeue.yml 을 dispatch 한다. GITHUB_TOKEN 으로 넣은 큐 항목은
+# merge_group CI 를 띄우지 못하고, 이 브리지는 시크릿을 쓰지 않으므로 사람 토큰을 가진 쪽으로 넘긴다.
 name: merge-queue-dequeue
 
 on:
@@ -24,8 +27,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
-      actions: read
-      contents: write
+      # 재투입 워크플로 dispatch 에 쓴다.
+      actions: write
+      contents: read
       issues: write
       pull-requests: write
     steps:
@@ -44,4 +48,5 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
           DEQUEUE_REASON: ${{ github.event.reason }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: node .github/scripts/handle-merge-queue-dequeue.mjs

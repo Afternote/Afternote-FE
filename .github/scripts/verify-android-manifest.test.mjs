@@ -3,7 +3,11 @@ import test from 'node:test';
 
 import { inspectManifest } from './verify-android-manifest.mjs';
 
-const manifest = ({ permissions = '', components = '', cleartext = 'false' } = {}) => `
+const MAIN_ACTIVITY =
+  '<activity android:name="com.afternote.afternote_fe.MainActivity" android:exported="true" ' +
+  'android:windowSoftInputMode="adjustResize" />';
+
+const manifest = ({ permissions = '', components = MAIN_ACTIVITY, cleartext = 'false' } = {}) => `
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
   ${permissions}
   <application android:usesCleartextTraffic="${cleartext}">
@@ -18,7 +22,7 @@ test('current allowed permissions and protected exported components pass', () =>
         <uses-permission android:name="android.permission.INTERNET" />
         <uses-permission android:name="com.example.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />`,
       components: `
-        <activity android:name="com.afternote.afternote_fe.MainActivity" android:exported="true" />
+        ${MAIN_ACTIVITY}
         <service android:name="example.SystemService" android:exported="true"
                  android:permission="android.permission.BIND_JOB_SERVICE" />
         <provider android:name="example.PrivateProvider" android:exported="false" />`,
@@ -46,6 +50,7 @@ test('cleartext traffic must stay explicitly disabled', () => {
   ]);
   assert.deepEqual(inspectManifest('<manifest><application /></manifest>'), [
     'application must explicitly set android:usesCleartextTraffic="false"',
+    'activity requiring adjustResize is missing: com.afternote.afternote_fe.MainActivity',
   ]);
 });
 
@@ -53,6 +58,7 @@ test('unprotected exports and every exported provider fail closed', () => {
   const violations = inspectManifest(
     manifest({
       components: `
+        ${MAIN_ACTIVITY}
         <receiver android:name="example.OpenReceiver" android:exported="true" />
         <provider android:name="example.OpenProvider" android:exported="true"
                   android:permission="example.PRIVATE" />`,
@@ -63,4 +69,29 @@ test('unprotected exports and every exported provider fail closed', () => {
     'unprotected exported receiver is not allowlisted: example.OpenReceiver',
     'exported provider is forbidden: example.OpenProvider',
   ]);
+});
+
+test('edge-to-edge 액티비티에서 adjustResize 가 빠지면 실패한다', () => {
+  const violations = inspectManifest(
+    manifest({
+      components:
+        '<activity android:name="com.afternote.afternote_fe.MainActivity" android:exported="true" />',
+    }),
+  );
+
+  assert.deepEqual(violations, [
+    'activity must declare android:windowSoftInputMode="adjustResize": com.afternote.afternote_fe.MainActivity',
+  ]);
+});
+
+test('adjustResize 는 다른 플래그와 함께 선언해도 통과한다', () => {
+  const violations = inspectManifest(
+    manifest({
+      components:
+        '<activity android:name="com.afternote.afternote_fe.MainActivity" android:exported="true" ' +
+        'android:windowSoftInputMode="adjustResize|stateHidden" />',
+    }),
+  );
+
+  assert.deepEqual(violations, []);
 });

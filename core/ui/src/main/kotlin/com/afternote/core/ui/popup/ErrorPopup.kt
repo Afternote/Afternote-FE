@@ -121,9 +121,15 @@ fun UploadErrorPopup(
     )
 }
 
-/** Dialog 래퍼 없이 카드 본체만 렌더링합니다. 프리뷰 및 테스트 전용. */
+/**
+ * Dialog 래퍼 없이 카드 본체만 렌더링하는 [AfternoteErrorPopup] 내부 구현.
+ *
+ * 파일 밖으로 열지 않는다 — 공개 계약은 [AfternoteErrorPopup] 과 그 위에 선
+ * [NetworkErrorPopup]·[ServerErrorPopup]·[UploadErrorPopup] 이고, 시각 회귀 baseline 도
+ * 그 진입점을 그려서 잡는다 (#1672).
+ */
 @Composable
-internal fun AfternoteErrorPopupContent(
+private fun AfternoteErrorPopupContent(
     @DrawableRes iconRes: Int,
     title: String,
     description: String,

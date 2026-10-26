@@ -69,6 +69,6 @@ class ReceiverSessionIsolationAndroidTest {
         const val PREVIOUS_ACCOUNT_RECEIVER = "이전 계정 수신인"
         const val TIMEOUT_MILLIS = 5_000L
 
-        fun previousAccountReceiver() = Receiver(91L, PREVIOUS_ACCOUNT_RECEIVER, "가족", "previous-account-auth")
+        fun previousAccountReceiver() = Receiver(91L, PREVIOUS_ACCOUNT_RECEIVER, "가족")
     }
 }

@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation.editor
 
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.Detail
@@ -14,10 +14,13 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUpl
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.testing.FakeAfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
+import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.afternoteEditorSavedStateHandle
 import com.afternote.feature.afternote.presentation.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.editor.state.AfternoteEditorError
+import com.afternote.feature.afternote.presentation.editorFlowRoute
+import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
@@ -88,10 +91,12 @@ class AfternoteEditorPrefillFailureTest {
             backgroundScope.launch { viewModel.uiState.collect {} }
             runCurrent()
 
-            viewModel.saveAfternote(
-                payload = SAVE_PAYLOAD,
-                selectedReceiverIds = listOf(7L),
-                memorialMedia = SaveAfternoteMemorialMedia(),
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload = SAVE_PAYLOAD,
+                    selectedReceiverIds = listOf(7L),
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                ),
             )
             runCurrent()
 
@@ -115,7 +120,7 @@ class AfternoteEditorPrefillFailureTest {
             assertTrue(viewModel.uiState.value.isPrefillFailed)
 
             shouldFail = false
-            viewModel.retryPrefill()
+            viewModel.onIntent(AfternoteEditorIntent.RetryPrefill)
             runCurrent()
 
             val state = viewModel.uiState.value
@@ -140,17 +145,19 @@ class AfternoteEditorPrefillFailureTest {
             runCurrent()
 
             shouldFail = false
-            viewModel.retryPrefill()
+            viewModel.onIntent(AfternoteEditorIntent.RetryPrefill)
             runCurrent()
             // 화면이 pendingPrefill 을 폼·TextFieldState 에 실은 뒤 통보하는 단계. 이걸 거쳐야
             // isPrefillLoading 이 내려간다 — 저장 가드가 «읽는 중» 도 막으므로 (#705) 여기서
             // 생략하면 폼이 아직 비어 있는 상태의 저장이 되어 정상 경로가 아니다.
-            viewModel.onPrefillConsumed()
+            viewModel.onIntent(AfternoteEditorIntent.ConsumePrefill)
             runCurrent()
-            viewModel.saveAfternote(
-                payload = SAVE_PAYLOAD,
-                selectedReceiverIds = listOf(7L),
-                memorialMedia = SaveAfternoteMemorialMedia(),
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload = SAVE_PAYLOAD,
+                    selectedReceiverIds = listOf(7L),
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                ),
             )
             runCurrent()
 
@@ -192,10 +199,12 @@ class AfternoteEditorPrefillFailureTest {
             assertTrue("전제: 아직 prefill 을 읽는 중이어야 한다", viewModel.uiState.value.isPrefillLoading)
             assertFalse("이 경로는 실패가 아니다", viewModel.uiState.value.isPrefillFailed)
 
-            viewModel.saveAfternote(
-                payload = SAVE_PAYLOAD,
-                selectedReceiverIds = listOf(7L),
-                memorialMedia = SaveAfternoteMemorialMedia(),
+            viewModel.onIntent(
+                AfternoteEditorIntent.Save(
+                    payload = SAVE_PAYLOAD,
+                    selectedReceiverIds = listOf(7L),
+                    memorialMedia = SaveAfternoteMemorialMedia(),
+                ),
             )
             runCurrent()
 
@@ -239,9 +248,10 @@ class AfternoteEditorPrefillFailureTest {
                 }
             val viewModel =
                 AfternoteEditorViewModel(
+                    route = AfternoteRoute.EditorFlowRoute(initialType = AfternoteType.SOCIAL_NETWORK),
                     savedStateHandle =
                         afternoteEditorSavedStateHandle(initialType = AfternoteType.SOCIAL_NETWORK, itemId = null),
-                    userRepository = unusedProxy<UserRepository>(),
+                    userReceiverRepository = unusedProxy<UserReceiverRepository>(),
                     afternoteRepository = repository,
                     memorialThumbnailUploadRepository =
                         MemorialThumbnailUploadRepository { error("썸네일 업로드가 호출되면 안 됩니다") },
@@ -251,13 +261,14 @@ class AfternoteEditorPrefillFailureTest {
                                 if (input == MediaInput.None) Result.success(null) else error("미디어 업로드가 호출되면 안 됩니다")
                             },
                         ),
+                    saveAfternoteUseCase = SaveAfternoteUseCase(repository),
                     errorReporter = RecordingErrorReporter(),
                 )
             backgroundScope.launch { viewModel.uiState.collect {} }
             runCurrent()
             assertFalse("전제: 신규 작성은 prefill 을 돌리지 않는다", viewModel.uiState.value.isPrefillLoading)
 
-            viewModel.retryPrefill()
+            viewModel.onIntent(AfternoteEditorIntent.RetryPrefill)
             runCurrent()
 
             assertFalse("재시도가 신규 작성에서 skeleton 을 세우면 안 된다", viewModel.uiState.value.isPrefillLoading)
@@ -285,10 +296,12 @@ class AfternoteEditorPrefillFailureTest {
     private fun viewModel(
         repository: FakeAfternoteRepository,
         errorReporter: ErrorReporter,
-    ): AfternoteEditorViewModel =
-        AfternoteEditorViewModel(
-            savedStateHandle = editorSavedStateHandle(),
-            userRepository = unusedProxy<UserRepository>(),
+    ): AfternoteEditorViewModel {
+        val editorHandle = editorSavedStateHandle()
+        return AfternoteEditorViewModel(
+            route = editorHandle.editorFlowRoute(),
+            savedStateHandle = editorHandle,
+            userReceiverRepository = unusedProxy<UserReceiverRepository>(),
             afternoteRepository = repository,
             memorialThumbnailUploadRepository =
                 MemorialThumbnailUploadRepository { error("썸네일 업로드가 호출되면 안 됩니다") },
@@ -303,8 +316,10 @@ class AfternoteEditorPrefillFailureTest {
                         }
                     },
                 ),
+            saveAfternoteUseCase = SaveAfternoteUseCase(repository),
             errorReporter = errorReporter,
         )
+    }
 
     private fun editorSavedStateHandle(): SavedStateHandle =
         afternoteEditorSavedStateHandle(

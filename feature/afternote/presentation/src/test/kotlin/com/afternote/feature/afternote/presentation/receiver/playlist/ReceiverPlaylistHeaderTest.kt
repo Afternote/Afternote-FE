@@ -57,7 +57,7 @@ class ReceiverPlaylistHeaderTest {
     fun `수신자 플레이리스트 헤더는 곡 수를 보여준다`() {
         renderScreen()
 
-        val songCount = composeRule.activity.getString(R.string.afternote_receiver_playlist_song_count_format, songs.size)
+        val songCount = composeRule.activity.getString(R.string.afternote_playlist_song_count_format, songs.size)
         composeRule.onNodeWithText(songCount).assertIsDisplayed()
     }
 }

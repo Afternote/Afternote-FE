@@ -213,7 +213,6 @@ class TimeLetterWriteViewModelTest {
             id = 10L,
             title = "existing title",
             sendAt = "2026-08-29T19:30:00",
-            deliveredAt = null,
             status = status,
             blocks = emptyList(),
             receiverIds = listOf(1L),

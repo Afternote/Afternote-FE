@@ -14,6 +14,27 @@ import {
 const scriptsDirectory = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(scriptsDirectory, "../..");
 
+test("baseline lookup requests the latest successful run of this workflow only", async () => {
+    const workflow = await readFile(
+        join(repositoryRoot, ".github/workflows/release-aab-preflight.yml"), "utf8",
+    );
+    const restore = workflow.slice(
+        workflow.indexOf("- name: Restore the previous public size report"),
+        workflow.indexOf("- name: Build, verify, and report release AAB"),
+    );
+    assert.match(restore, /gh api "repos\/\$GITHUB_REPOSITORY\/actions\/workflows\/release-aab-preflight\.yml\/runs\?status=success&per_page=1"/);
+    assert.doesNotMatch(restore, /--paginate|actions\/runs\?status=/);
+});
+
+test("ordinary PR script validation executes the jarsigner policy fixtures before Gradle", async () => {
+    const workflow = await readFile(
+        join(repositoryRoot, ".github/workflows/unit-test.yml"), "utf8",
+    );
+    assert.match(workflow, /- name: Run jarsigner policy fixtures\n\s+if: inputs\.run_node_tests\n\s+run: bash scripts\/test-jarsigner-verification-policy\.sh/);
+    assert.ok(workflow.indexOf("run: bash scripts/test-jarsigner-verification-policy.sh") <
+        workflow.indexOf("- name: Set up JDK 21"));
+});
+
 function currentMetrics(overrides = {}) {
     return {
         sourceSha: "current-sha",

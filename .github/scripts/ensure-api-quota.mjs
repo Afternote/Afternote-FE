@@ -4,8 +4,7 @@
 // 구분한다 (#1465).
 //
 // 이 저장소의 게이트들은 잡마다 `gh api` 를 여러 번 부른다 — merge-order-guard 는 closing
-// 이슈마다 blocked_by 를, review-debt-guard 는 열린 PR 전수를, impact 분류는 PR 메타를
-// 조회한다. PR 수 × 잡 수 × 잡당 호출수가 곱해져 installation 한도를 넘기면, 저장소 전체의
+// 이슈마다 blocked_by 를, impact 분류는 PR 메타를 조회한다. PR 수 × 잡 수 × 잡당 호출수가 곱해져 installation 한도를 넘기면, 저장소 전체의
 // 게이트가 코드와 무관하게 빨갛게 된다. 그때 재실행은 남은 quota 를 더 태울 뿐이다.
 //
 // 명령:
@@ -18,8 +17,8 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import process from "node:process";
 
-// 게이트 한 번이 쓰는 호출 수의 상한을 여유 있게 잡은 값. merge-order-guard 8 · review-debt-guard 6
-// (열린 PR 전수를 도는 루프 포함) 를 감안한다.
+// 게이트 한 번이 쓰는 호출 수의 상한을 여유 있게 잡은 값. merge-order-guard 8 을
+// 감안한다.
 const DEFAULT_MIN_REMAINING = 200;
 // job timeout(대개 5분) 안에서 기다릴 수 있는 상한. 리셋이 이보다 멀면 기다리지 않고 실패한다.
 const DEFAULT_MAX_WAIT_SECONDS = 240;

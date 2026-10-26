@@ -21,6 +21,7 @@ import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
 import com.afternote.afternote_fe.notification.NotificationEntrySource
 import com.afternote.afternote_fe.test.backgroundActivityStartOptions
+import com.afternote.core.common.notification.NotificationDestination
 import com.afternote.core.common.notification.NotificationPendingIntentFactory
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.testing.FakeAuthRepository
@@ -108,9 +109,9 @@ class NotificationNavigationAndroidTest {
         composeRule
             .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))
             .assertIsDisplayed()
-        deliverWarmNotification(NotificationEntrySource.FCM, "logged-out-1")
+        deliverWarmNotification(NotificationEntrySource.FCM, "logged-out-1", NotificationDestination.TIME_LETTER)
 
-        awaitNotificationIntent(NotificationEntrySource.FCM, "logged-out-1")
+        awaitNotificationIntent(NotificationEntrySource.FCM, "logged-out-1", NotificationDestination.TIME_LETTER)
         assertSame(activityUnderTest, resumedMainActivity())
         composeRule
             .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))
@@ -118,51 +119,70 @@ class NotificationNavigationAndroidTest {
 
         fakeAuth.loggedIn = true
 
-        val greeting = context.getString(HomeR.string.home_tab_greeting, "테스트 사용자")
-        composeRule.waitUntilAtLeastOneExists(hasText(greeting), timeoutMillis = 10_000)
-        composeRule.onNodeWithText(greeting).assertIsDisplayed()
-        composeRule.onNode(selectedBottomBarMatcher(CoreUiR.string.core_ui_nav_item_home)).assertIsSelected()
+        // 로그인이 확정되면 큐에 남아 있던 알림이 그제서야 목적지로 이어진다.
+        awaitSelectedBottomBarTab(CoreUiR.string.core_ui_nav_item_timeletter)
     }
 
     @Test
-    fun warmNotificationWhileLoggedIn_preservesExistingNavHost() {
+    fun warmNotificationWhileLoggedIn_isReceivedWithoutRecreatingActivity() {
         fakeAuth.loggedIn = true
 
         val greeting = context.getString(HomeR.string.home_tab_greeting, "테스트 사용자")
         composeRule.waitUntilAtLeastOneExists(hasText(greeting), timeoutMillis = 10_000)
         openTimeLetterTab()
-        deliverWarmNotification(NotificationEntrySource.FCM, "logged-in-1")
+        deliverWarmNotification(NotificationEntrySource.FCM, "logged-in-1", NotificationDestination.HOME)
 
-        awaitNotificationIntent(NotificationEntrySource.FCM, "logged-in-1")
+        awaitNotificationIntent(NotificationEntrySource.FCM, "logged-in-1", NotificationDestination.HOME)
         assertSame(activityUnderTest, resumedMainActivity())
-        composeRule.onNode(selectedBottomBarMatcher(CoreUiR.string.core_ui_nav_item_timeletter)).assertIsSelected()
+        awaitSelectedBottomBarTab(CoreUiR.string.core_ui_nav_item_home)
+
+        // 같은 알림을 다시 받아도 두 번 처리하지 않는다 — 탭을 옮겨 둔 뒤 재전달해도 그대로다.
+        openTimeLetterTab()
+        deliverWarmNotification(NotificationEntrySource.FCM, "logged-in-1", NotificationDestination.HOME)
+        composeRule.waitForIdle()
+        awaitSelectedBottomBarTab(CoreUiR.string.core_ui_nav_item_timeletter)
     }
 
     @Test
-    fun backgroundNotification_resumesSameActivityAndKeepsCurrentScreen() {
+    fun backgroundNotification_resumesSameActivityAndNavigatesToDestination() {
         fakeAuth.loggedIn = true
 
         val greeting = context.getString(HomeR.string.home_tab_greeting, "테스트 사용자")
         composeRule.waitUntilAtLeastOneExists(hasText(greeting), timeoutMillis = 10_000)
-        openTimeLetterTab()
         composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
-        deliverWarmNotification(NotificationEntrySource.DAILY, "background-1")
+        deliverWarmNotification(
+            NotificationEntrySource.DAILY,
+            "background-1",
+            NotificationDestination.AFTERNOTE,
+        )
 
         composeRule.waitUntil(timeoutMillis = 10_000) {
             activityUnderTest.lifecycle.currentState == Lifecycle.State.RESUMED
         }
-        awaitNotificationIntent(NotificationEntrySource.DAILY, "background-1")
+        awaitNotificationIntent(
+            NotificationEntrySource.DAILY,
+            "background-1",
+            NotificationDestination.AFTERNOTE,
+        )
         assertSame(activityUnderTest, resumedMainActivity())
-        composeRule.onNode(selectedBottomBarMatcher(CoreUiR.string.core_ui_nav_item_timeletter)).assertIsSelected()
+        awaitSelectedBottomBarTab(CoreUiR.string.core_ui_nav_item_note)
     }
 
     @Test
     fun sameRequestCode_differentSourceAndOccurrenceKeepLatestExtras() {
-        deliverWarmNotification(NotificationEntrySource.FCM, "shared-token")
-        awaitNotificationIntent(NotificationEntrySource.FCM, "shared-token")
+        deliverWarmNotification(NotificationEntrySource.FCM, "shared-token", NotificationDestination.HOME)
+        awaitNotificationIntent(NotificationEntrySource.FCM, "shared-token", NotificationDestination.HOME)
 
-        deliverWarmNotification(NotificationEntrySource.DAILY, "shared-token")
-        awaitNotificationIntent(NotificationEntrySource.DAILY, "shared-token")
+        deliverWarmNotification(
+            NotificationEntrySource.DAILY,
+            "shared-token",
+            NotificationDestination.TIME_LETTER,
+        )
+        awaitNotificationIntent(
+            NotificationEntrySource.DAILY,
+            "shared-token",
+            NotificationDestination.TIME_LETTER,
+        )
     }
 
     private fun openTimeLetterTab() {
@@ -176,12 +196,14 @@ class NotificationNavigationAndroidTest {
     private fun deliverWarmNotification(
         source: NotificationEntrySource,
         occurrenceId: String,
+        destination: NotificationDestination,
     ) {
         val pendingIntent =
             NotificationPendingIntentFactory.create(
                 context = context,
                 source = source.contractValue,
                 occurrenceId = occurrenceId,
+                destination = destination,
             )
 
         assertNotNull(pendingIntent)
@@ -191,6 +213,7 @@ class NotificationNavigationAndroidTest {
     private fun awaitNotificationIntent(
         source: NotificationEntrySource,
         occurrenceId: String,
+        destination: NotificationDestination,
     ) {
         composeRule.waitUntil(timeoutMillis = 10_000) {
             activityUnderTest.intent.getStringExtra(
@@ -198,8 +221,20 @@ class NotificationNavigationAndroidTest {
             ) == source.contractValue &&
                 activityUnderTest.intent.getStringExtra(
                     NotificationPendingIntentFactory.EXTRA_NOTIFICATION_OCCURRENCE_TOKEN,
-                ) == occurrenceId
+                ) == occurrenceId &&
+                activityUnderTest.intent.getStringExtra(
+                    NotificationPendingIntentFactory.EXTRA_NOTIFICATION_DESTINATION,
+                ) == destination.contractValue
         }
+    }
+
+    /** 목적지 이동은 Intent 도착 뒤 한 프레임 더 걸린다 — 선택 탭이 바뀔 때까지 기다린다. */
+    private fun awaitSelectedBottomBarTab(labelResource: Int) {
+        composeRule.waitUntilAtLeastOneExists(
+            selectedBottomBarMatcher(labelResource),
+            timeoutMillis = 10_000,
+        )
+        composeRule.onNode(selectedBottomBarMatcher(labelResource)).assertIsSelected()
     }
 
     private fun resumedMainActivity(): MainActivity {

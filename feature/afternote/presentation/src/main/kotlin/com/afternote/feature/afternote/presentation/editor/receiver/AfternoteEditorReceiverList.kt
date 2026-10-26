@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.editor.receiver
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -133,9 +133,10 @@ private fun AfternoteEditorReceiverItem(
         Spacer(Modifier.weight(1f))
         // 더보기 아이콘 + 드롭다운 메뉴
         Box {
-            Image(
+            Icon(
                 painter = painterResource(R.drawable.afternote_ic_more_horizontal_1),
                 contentDescription = stringResource(R.string.afternote_editor_content_description_more),
+                tint = AfternoteDesign.colors.gray5,
                 modifier =
                     Modifier
                         .clickable(role = Role.Button, onClick = onMoreClick),

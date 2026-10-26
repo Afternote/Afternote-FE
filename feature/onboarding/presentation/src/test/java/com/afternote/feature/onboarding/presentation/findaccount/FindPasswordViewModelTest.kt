@@ -6,7 +6,10 @@ import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.model.AccountRegistration
 import com.afternote.core.model.FoundAccount
 import com.afternote.core.ui.UiText
+import com.afternote.feature.onboarding.presentation.OnboardingFailure
 import com.afternote.feature.onboarding.presentation.R
+import com.afternote.feature.onboarding.presentation.snackbarMessage
+import com.afternote.feature.onboarding.presentation.toDisplay
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -64,8 +67,8 @@ class FindPasswordViewModelTest {
         viewModel.requestVerificationCode()
 
         val state = viewModel.uiState.value
-        assertTrue(state.isSocialSignUpAccount)
-        assertNull(state.errorMessage)
+        assertTrue((state.failure == OnboardingFailure.SocialAccountRecoveryUnavailable))
+        assertNull(state.failure.toDisplay().snackbarMessage)
         assertFalse(state.isVerificationSent)
         // 서버가 정상적으로 가르는 분기라 장애로 세지 않는다.
         assertEquals(0, reporter.recordedCount)
@@ -80,8 +83,8 @@ class FindPasswordViewModelTest {
         viewModel.requestVerificationCode()
 
         val state = viewModel.uiState.value
-        assertFalse(state.isSocialSignUpAccount)
-        assertEquals(UiText.Resource(R.string.onboarding_network_error), state.errorMessage)
+        assertFalse((state.failure == OnboardingFailure.SocialAccountRecoveryUnavailable))
+        assertEquals(UiText.Resource(R.string.onboarding_network_error), state.failure.toDisplay().snackbarMessage)
         assertEquals(1, reporter.recordedCount)
     }
 
@@ -94,7 +97,7 @@ class FindPasswordViewModelTest {
         viewModel.updateEmail("other@example.com")
 
         val state = viewModel.uiState.value
-        assertFalse(state.isSocialSignUpAccount)
+        assertFalse((state.failure == OnboardingFailure.SocialAccountRecoveryUnavailable))
         assertFalse(state.isVerificationSent)
     }
 
@@ -233,7 +236,9 @@ class FindPasswordViewModelTest {
 
         assertEquals(
             UiText.Resource(R.string.onboarding_find_password_code_expired),
-            viewModel.uiState.value.errorMessage,
+            viewModel.uiState.value.failure
+                .toDisplay()
+                .snackbarMessage,
         )
         assertFalse(viewModel.uiState.value.isPasswordChanged)
     }
@@ -247,7 +252,9 @@ class FindPasswordViewModelTest {
 
         assertEquals(
             UiText.Resource(R.string.onboarding_find_password_failed),
-            viewModel.uiState.value.errorMessage,
+            viewModel.uiState.value.failure
+                .toDisplay()
+                .snackbarMessage,
         )
     }
 
@@ -260,6 +267,26 @@ class FindPasswordViewModelTest {
         viewModel.onPasswordResetConsumed()
 
         assertEquals(FindPasswordUiState(), viewModel.uiState.value)
+    }
+
+    @Test
+    fun `소셜 계정 거절은 이전 요청 실패를 대체하고 늦은 스낵바 소비를 견딘다`() {
+        var failure: Throwable = IllegalStateException("first request failed")
+        val repository = FakeAccountRepository(onSendFindCode = { Result.failure(failure) })
+        val viewModel = viewModel(repository).apply { updateEmail(EMAIL) }
+        viewModel.requestVerificationCode()
+        assertTrue(viewModel.uiState.value.failure is OnboardingFailure.RequestFailed)
+
+        failure = socialSignUpAccount()
+        viewModel.requestVerificationCode()
+        viewModel.onErrorConsumed()
+
+        assertEquals(OnboardingFailure.SocialAccountRecoveryUnavailable, viewModel.uiState.value.failure)
+        assertNull(
+            viewModel.uiState.value.failure
+                .toDisplay()
+                .snackbarMessage,
+        )
     }
 
     private fun viewModel(

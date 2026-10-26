@@ -219,3 +219,28 @@ test("GitHub outputs preserve empty scopes and booleans", () => {
     assert.match(output, /^unit_test_tasks=$/m);
     assert.match(output, /^codeql_actions=false$/m);
 });
+
+test("dependency review runs only for dependency graph inputs and fails closed", () => {
+    // #2258: Dependency Review 는 required 라 매 PR 에 check 가 생긴다. 검사 자체는 의존성
+    // 입력이 바뀐 PR 에서만 하고, 분류가 확신할 수 없는 변경은 검사 쪽으로 닫는다.
+    const sourceOnly = resolvePrImpact(["feature/home/presentation/src/main/kotlin/Home.kt"], modules, dependencies);
+    assert.equal(sourceOnly.dependencyReview, false);
+    assert.match(githubOutputLines(sourceOnly).join("\n"), /^dependency_review_required=false$/m);
+
+    for (const changed of [
+        ["gradle/libs.versions.toml"],
+        ["feature/home/presentation/build.gradle.kts"],
+        ["build-logic/convention/src/main/kotlin/Convention.kt"],
+        [".github/workflows/dependency-submission.yml"],
+        [".github/workflows/dependency-review.yml"],
+        [".github/workflows/pr-validation.yml"],
+        [".github/scripts/resolve-pr-impact.mjs"],
+        ["unexpected/runtime-config.toml"],
+    ]) {
+        const impact = resolvePrImpact(changed, modules, dependencies);
+        assert.equal(impact.dependencyReview, true, changed[0]);
+        assert.match(githubOutputLines(impact).join("\n"), /^dependency_review_required=true$/m);
+    }
+
+    assert.equal(resolvePrImpact(["README.md", "docs/qa/plan.md"], modules, dependencies).dependencyReview, false);
+});

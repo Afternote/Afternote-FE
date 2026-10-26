@@ -10,6 +10,7 @@ val googleWebClientId = socialLoginKey("GOOGLE_WEB_CLIENT_ID")
 
 android {
     namespace = "com.afternote.feature.setting.presentation"
+    resourcePrefix = "setting_"
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
     testOptions.unitTests.isIncludeAndroidResources = true
 
@@ -30,10 +31,9 @@ dependencies {
     implementation(projects.core.domain)
     implementation(projects.core.model)
     implementation(projects.core.ui)
-    implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.compose.runtime)
-    implementation(libs.kakao.sdk.auth)
-    implementation(libs.kakao.sdk.user)
+    implementation(libs.coil.compose)
+    implementation(libs.kakao.sdk.share)
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
@@ -41,11 +41,14 @@ dependencies {
 
     testImplementation(libs.coroutines.test)
     testImplementation(testFixtures(projects.core.domain))
+    testImplementation(testFixtures(projects.feature.setting.domain))
     testImplementation(projects.core.network)
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation(libs.androidx.test.core.ktx)
     testImplementation(libs.robolectric)
+    testImplementation(libs.hilt.android.testing)
+    kspTest(libs.hilt.compiler)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     screenshotTestImplementation(libs.screenshot.validation.api)

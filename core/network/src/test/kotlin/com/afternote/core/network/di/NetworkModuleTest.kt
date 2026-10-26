@@ -3,6 +3,7 @@ package com.afternote.core.network.di
 import com.afternote.core.network.calladapter.ApiErrorCallAdapterFactory
 import okhttp3.logging.HttpLoggingInterceptor
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -21,6 +22,18 @@ class NetworkModuleTest {
             )
 
         assertEquals(listOf(loggingInterceptor), client.interceptors)
+    }
+
+    /**
+     * 재발급을 기다리는 메인 디스패처 스레드가 호스트당 실행 칸을 다 쥐면, 같은 디스패처에 들어간 재발급
+     * 호출은 시작하지 못해 교착이 난다 (#2160). 풀은 계속 공유해 소켓이 두 벌 생기지 않게 한다.
+     */
+    @Test
+    fun `재발급 클라이언트 - 커넥션 풀은 base 와 공유하고 디스패처는 따로 쓴다`() {
+        val client = NetworkModule.provideRefreshOkHttpClient(baseClient, HttpLoggingInterceptor())
+
+        assertSame(baseClient.connectionPool, client.connectionPool)
+        assertNotSame(baseClient.dispatcher, client.dispatcher)
     }
 
     @Test

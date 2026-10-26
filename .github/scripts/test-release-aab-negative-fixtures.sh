@@ -68,6 +68,32 @@ prepare_verifier_fixture() {
     printf '%s' "${root}"
 }
 
+empty_bundle_root="$(prepare_verifier_fixture empty-bundle)"
+: > "${empty_bundle_root}/app/build/outputs/bundle/release/app-release.aab"
+set +e
+empty_bundle_output="$("${empty_bundle_root}/scripts/verify-play-release-bundle.sh" --skip-build 2>&1)"
+empty_bundle_status=$?
+set -e
+if [[ ${empty_bundle_status} -eq 0 ]] ||
+    ! grep -Fq 'AAB를 찾을 수 없거나 비어 있습니다:' <<< "${empty_bundle_output}"; then
+    printf 'Empty-AAB fixture did not fail closed:\n%s\n' "${empty_bundle_output}" >&2
+    exit 1
+fi
+echo "PASS: empty AAB fixture was rejected."
+
+missing_mapping_root="$(prepare_verifier_fixture missing-mapping)"
+rm "${missing_mapping_root}/app/build/outputs/mapping/release/mapping.txt"
+set +e
+missing_mapping_output="$("${missing_mapping_root}/scripts/verify-play-release-bundle.sh" --skip-build 2>&1)"
+missing_mapping_status=$?
+set -e
+if [[ ${missing_mapping_status} -eq 0 ]] ||
+    ! grep -Fq 'R8 mapping 파일을 찾을 수 없거나 비어 있습니다:' <<< "${missing_mapping_output}"; then
+    printf 'Missing-mapping fixture did not fail closed:\n%s\n' "${missing_mapping_output}" >&2
+    exit 1
+fi
+echo "PASS: missing R8 mapping fixture was rejected."
+
 missing_entry_root="$(prepare_verifier_fixture missing-entry)"
 missing_entry_bundle="${missing_entry_root}/app/build/outputs/bundle/release/app-release.aab"
 zip -q -d "${missing_entry_bundle}" base/resources.pb
@@ -90,7 +116,8 @@ unzip -p "${positive_bundle}" base/resources.pb > "${mutation_root}/base/resourc
 printf 'tampered' >> "${mutation_root}/base/resources.pb"
 (
     cd "${mutation_root}"
-    zip -q -u "${signature_bundle}" base/resources.pb
+    # Replace regardless of ZIP's two-second timestamp granularity on fast runners.
+    zip -q "${signature_bundle}" base/resources.pb
 )
 set +e
 signature_output="$("${signature_root}/scripts/verify-play-release-bundle.sh" --skip-build 2>&1)"

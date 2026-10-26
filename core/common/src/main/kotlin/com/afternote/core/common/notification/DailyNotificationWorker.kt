@@ -31,6 +31,7 @@ class DailyNotificationWorker(
                 context = applicationContext,
                 source = NOTIFICATION_SOURCE,
                 occurrenceId = UUID.randomUUID().toString(),
+                destination = NOTIFICATION_DESTINATION,
             )
 
         val notification =
@@ -70,5 +71,12 @@ class DailyNotificationWorker(
         private const val CHANNEL_ID = "DAILY_CHANNEL_ID"
         private const val NOTIFICATION_ID = 1001
         private const val NOTIFICATION_SOURCE = "daily"
+
+        /**
+         * 일일 알림 문구(`core_common_notification_daily_text` — 「오늘 하루 누구한테 가장
+         * 고마웠나요?」)는 데일리 질문 답변을 재촉하는 말이다. 그 화면을 품은 탭이 마음의 기록이라
+         * 탭 자체를 목적지로 둔다. 개별 질문 화면은 인자가 필요해 BE·FE 양쪽 계약이 더 서야 한다.
+         */
+        private val NOTIFICATION_DESTINATION = NotificationDestination.MIND_RECORD
     }
 }

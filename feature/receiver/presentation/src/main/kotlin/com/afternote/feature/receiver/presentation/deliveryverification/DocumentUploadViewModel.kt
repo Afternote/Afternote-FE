@@ -8,8 +8,9 @@ import com.afternote.core.ui.UiText
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.afternote.presentation.reporting.shouldReportInReceiverFlow
-import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
+import com.afternote.feature.receiver.domain.error.DeliveryDocumentsMissingException
 import com.afternote.feature.receiver.domain.repository.ReceiverDeliveryDocumentUploadRepository
+import com.afternote.feature.receiver.domain.usecase.SubmitDeliveryVerificationUseCase
 import com.afternote.feature.receiver.presentation.R
 import com.afternote.feature.receiver.presentation.error.toReceiverErrorPopupOrNull
 import com.afternote.feature.receiver.presentation.error.toReceiverErrorUiText
@@ -26,15 +27,18 @@ import javax.inject.Inject
  *
  * 슬롯별 파일 바이트는 UI 의 picker 콜백이 ContentResolver 로 추출해 [uploadDocument] 로 전달한다 —
  * 도메인 레이어가 Android Uri 에 의존하지 않도록 분리. 업로드 성공 시 슬롯에 fileUrl 이 채워지고,
- * 두 슬롯 중 하나 이상 fileUrl 이 채워지면 "다음" 활성 → [submit] 으로 `submitDeliveryVerification` 호출
- * (사망진단서/가족관계증명서 중 하나만으로 신청 가능 — 이슈 #380).
+ * 두 슬롯 중 하나 이상 fileUrl 이 채워지면 "다음" 활성 → [submit] 이 [SubmitDeliveryVerificationUseCase] 호출.
+ *
+ * «서류가 최소 1장» 이라는 제출 불변식(#380)은 UseCase 가 소유한다 — 이 ViewModel 은 그 실패를
+ * 화면 문구로 옮기기만 한다 (#1701). 업로드 진행 중 잠금(#711)과 중복 탭 차단은 화면 사정이라
+ * 여기 남는다.
  */
 @HiltViewModel
 class DocumentUploadViewModel
     @Inject
     constructor(
         private val uploadRepository: ReceiverDeliveryDocumentUploadRepository,
-        private val receiverAuthRepository: ReceiverAuthRepository,
+        private val submitDeliveryVerification: SubmitDeliveryVerificationUseCase,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DocumentUploadUiState())
@@ -98,9 +102,8 @@ class DocumentUploadViewModel
                 }
                 return
             }
-            val deathUrl = state.deathCertificate.fileUrl
-            val famRelUrl = state.familyRelationCertificate.fileUrl
-            if ((deathUrl == null && famRelUrl == null) || state.isSubmitting) {
+            // 이미 보낸 신청이 응답을 기다리는 중이면 두 번째 탭은 버린다 — 화면 사정이라 UseCase 로 내리지 않는다.
+            if (state.isSubmitting) {
                 _uiState.update {
                     it.copy(errorMessage = UiText.Resource(R.string.receiver_verify_documents_required))
                 }
@@ -110,18 +113,29 @@ class DocumentUploadViewModel
                 it.copy(isSubmitting = true, errorMessage = null)
             }
             viewModelScope.launch {
-                receiverAuthRepository
-                    .submitDeliveryVerification(deathUrl, famRelUrl)
-                    .onSuccess {
-                        _uiState.update { it.copy(isSubmitting = false, isSubmitted = true) }
-                    }.onFailure { throwable ->
-                        // 서버가 사유 문구를 준 거절(이미 대기 중 등)은 예상된 경로라 리포팅하지 않는다.
-                        if (throwable.shouldReportInReceiverFlow()) {
-                            errorReporter.recordAfternoteFailure(AfternoteFailureStage.DELIVERY_SUBMIT, throwable)
+                submitDeliveryVerification(
+                    deathCertificateUrl = state.deathCertificate.fileUrl,
+                    familyRelationCertificateUrl = state.familyRelationCertificate.fileUrl,
+                ).onSuccess {
+                    _uiState.update { it.copy(isSubmitting = false, isSubmitted = true) }
+                }.onFailure { throwable ->
+                    // 서류가 한 장도 없어 요청이 나가지도 않은 경우 — 서버 실패가 아니므로 리포팅하지 않는다.
+                    if (throwable is DeliveryDocumentsMissingException) {
+                        _uiState.update {
+                            it.copy(
+                                isSubmitting = false,
+                                errorMessage = UiText.Resource(R.string.receiver_verify_documents_required),
+                            )
                         }
-                        _uiState.update { it.copy(isSubmitting = false) }
-                        showFailure(throwable, R.string.receiver_verify_submit_failed, retry = ::submit)
+                        return@onFailure
                     }
+                    // 서버가 사유 문구를 준 거절(이미 대기 중 등)은 예상된 경로라 리포팅하지 않는다.
+                    if (throwable.shouldReportInReceiverFlow()) {
+                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.DELIVERY_SUBMIT, throwable)
+                    }
+                    _uiState.update { it.copy(isSubmitting = false) }
+                    showFailure(throwable, R.string.receiver_verify_submit_failed, retry = ::submit)
+                }
             }
         }
 

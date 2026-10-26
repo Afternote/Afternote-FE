@@ -1,17 +1,28 @@
 package com.afternote.feature.setting.presentation
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeAuthRepository
-import com.afternote.core.domain.testing.FakeUserRepository
+import com.afternote.core.domain.testing.FakeMyProfileRepository
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
+import com.afternote.core.domain.testing.FakeReceiverInvitationRepository
+import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
+import com.afternote.core.domain.testing.FakeUserReceiverRepository
 import com.afternote.core.model.delivery.ConditionState
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.DeliveryConditionType
@@ -23,25 +34,42 @@ import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
+import com.afternote.core.model.user.UserMarketingConsent
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.setting.presentation.screen.ReceiverEditScreen
-import com.afternote.feature.setting.presentation.screen.ReceiverRegisterScreen
-import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsViewModel
-import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionError
-import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionViewModel
-import com.afternote.feature.setting.presentation.viewmodel.ProfileEditEvent
-import com.afternote.feature.setting.presentation.viewmodel.ProfileEditUiState
-import com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel
-import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
-import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditEvent
-import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditViewModel
-import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterEvent
-import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
-import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
-import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
-import com.afternote.feature.setting.presentation.viewmodel.WithdrawUiState
+import com.afternote.feature.setting.domain.UpdateReceiverInfoUseCase
+import com.afternote.feature.setting.domain.UpdateTimeLetterDeliveryConditionUseCase
+import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
+import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
+import com.afternote.feature.setting.presentation.account.ConnectedAccountsIntent
+import com.afternote.feature.setting.presentation.account.ConnectedAccountsViewModel
+import com.afternote.feature.setting.presentation.delivery.DeliveryConditionError
+import com.afternote.feature.setting.presentation.delivery.DeliveryConditionIntent
+import com.afternote.feature.setting.presentation.delivery.DeliveryConditionViewModel
+import com.afternote.feature.setting.presentation.home.SettingIntent
+import com.afternote.feature.setting.presentation.home.SettingProfileState
+import com.afternote.feature.setting.presentation.home.SettingUiState
+import com.afternote.feature.setting.presentation.home.SettingViewModel
+import com.afternote.feature.setting.presentation.home.WithdrawUiState
+import com.afternote.feature.setting.presentation.navigation.SettingRoute
+import com.afternote.feature.setting.presentation.notification.MarketingConsent
+import com.afternote.feature.setting.presentation.notification.PushNotificationIntent
+import com.afternote.feature.setting.presentation.notification.PushNotificationViewModel
+import com.afternote.feature.setting.presentation.notification.PushSetting
+import com.afternote.feature.setting.presentation.profile.ProfileEditEvent
+import com.afternote.feature.setting.presentation.profile.ProfileEditIntent
+import com.afternote.feature.setting.presentation.profile.ProfileEditUiState
+import com.afternote.feature.setting.presentation.profile.ProfileEditViewModel
+import com.afternote.feature.setting.presentation.receiver.ReceiverEditEvent
+import com.afternote.feature.setting.presentation.receiver.ReceiverEditIntent
+import com.afternote.feature.setting.presentation.receiver.ReceiverEditScreen
+import com.afternote.feature.setting.presentation.receiver.ReceiverEditViewModel
+import com.afternote.feature.setting.presentation.receiver.ReceiverInviteViewModel
+import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterEvent
+import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterIntent
+import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterScreen
+import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterViewModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -58,13 +86,13 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.util.ArrayDeque
-import com.afternote.core.domain.testing.FakeUserRepository.ConnectedAccountLinkCall as CompletionConnectedLinkCall
-import com.afternote.core.domain.testing.FakeUserRepository.DeliveryUpdateCall as CompletionDeliveryUpdateCall
-import com.afternote.core.domain.testing.FakeUserRepository.ProfileUpdateCall as CompletionProfileUpdateCall
-import com.afternote.core.domain.testing.FakeUserRepository.PushUpdateCall as CompletionPushUpdateCall
-import com.afternote.core.domain.testing.FakeUserRepository.ReceiverCreateCall as CompletionReceiverRegistrationCall
-import com.afternote.core.domain.testing.FakeUserRepository.ReceiverMessageCall as CompletionReceiverMessageCall
-import com.afternote.core.domain.testing.FakeUserRepository.ReceiverUpdateCall as CompletionReceiverEditCall
+import com.afternote.core.domain.testing.FakeMyProfileRepository.ProfileUpdateCall as CompletionProfileUpdateCall
+import com.afternote.core.domain.testing.FakeUserReceiverRepository.DeliveryUpdateCall as CompletionDeliveryUpdateCall
+import com.afternote.core.domain.testing.FakeUserReceiverRepository.ReceiverCreateCall as CompletionReceiverRegistrationCall
+import com.afternote.core.domain.testing.FakeUserReceiverRepository.ReceiverMessageCall as CompletionReceiverMessageCall
+import com.afternote.core.domain.testing.FakeUserReceiverRepository.ReceiverUpdateCall as CompletionReceiverEditCall
+import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository.ConnectedAccountLinkCall as CompletionConnectedLinkCall
+import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository.PushUpdateCall as CompletionPushUpdateCall
 import com.afternote.feature.setting.presentation.R as SettingR
 
 @RunWith(RobolectricTestRunner::class)
@@ -78,15 +106,15 @@ class SettingCompletionTest {
     fun profileUpdate_success_emitsExactPayloadAndEventAfterPendingRequest() {
         setHarnessContent()
         val scenario = CompletionUserScenario()
-        val repository = scenario.repository
+        val repository = scenario.profileRepository
         val updateGate = scenario.enqueueProfileUpdate()
-        val viewModel = ProfileEditViewModel(repository)
+        val viewModel = ProfileEditViewModel(repository, FakePhotoUploadRepository.strict())
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value is ProfileEditUiState.Success
         }
 
         composeRule.runOnIdle {
-            viewModel.updateProfile(name = "새 이름", phone = "01098765432")
+            viewModel.onIntent(ProfileEditIntent.UpdateProfile(name = "새 이름", phone = "01098765432"))
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.profileUpdateCalls.size == 1
@@ -102,27 +130,32 @@ class SettingCompletionTest {
             Result.success(COMPLETION_DEFAULT_USER.copy(name = "새 이름", phone = "01098765432")),
         )
 
-        assertEquals(ProfileEditEvent.UpdateSuccess, awaitEvent(viewModel.events))
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            (viewModel.uiState.value as? ProfileEditUiState.Success)?.pendingEvent == ProfileEditEvent.UpdateSuccess
+        }
+        composeRule.runOnIdle { viewModel.onIntent(ProfileEditIntent.ConsumeEvent(ProfileEditEvent.UpdateSuccess)) }
+        assertEquals(null, (viewModel.uiState.value as ProfileEditUiState.Success).pendingEvent)
     }
 
     @Test
     fun pushUpdates_keepOptimisticSuccessAndRollbackFailureWithExactPatches() {
         setHarnessContent()
         val scenario = CompletionUserScenario()
-        val repository = scenario.repository
+        val repository = scenario.notificationRepository
         val newsletterGate = scenario.enqueuePushUpdate()
         val mindRecordGate = scenario.enqueuePushUpdate()
         val afterNoteGate = scenario.enqueuePushUpdate()
         val viewModel =
             PushNotificationViewModel(
                 context = ApplicationProvider.getApplicationContext(),
-                userRepository = repository,
+                notificationRepository = repository,
+                errorReporter = NoOpErrorReporter,
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             !viewModel.uiState.value.isLoading
         }
 
-        composeRule.runOnIdle { viewModel.onNewsletterToggle(false) }
+        composeRule.runOnIdle { viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.NEWSLETTER, false)) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.pushUpdateCalls.size == 1
         }
@@ -141,7 +174,7 @@ class SettingCompletionTest {
         }
         assertFalse(viewModel.uiState.value.isNewsletterOn)
 
-        composeRule.runOnIdle { viewModel.onMindRecordToggle(false) }
+        composeRule.runOnIdle { viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.MIND_RECORD, false)) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.pushUpdateCalls.size == 2
         }
@@ -162,12 +195,13 @@ class SettingCompletionTest {
 
         assertTrue(viewModel.uiState.value.isMindRecordOn)
         assertFalse(viewModel.uiState.value.isNewsletterOn)
+        assertTrue(viewModel.uiState.value.saveFailure != null)
 
         composeRule.runOnIdle {
-            viewModel.onAfternoteToggle(false)
-            viewModel.onSmsChecked(true)
-            viewModel.onEmailChecked(true)
-            viewModel.onPushChecked(true)
+            viewModel.onIntent(PushNotificationIntent.TogglePushSetting(PushSetting.AFTERNOTE, false))
+            viewModel.onIntent(PushNotificationIntent.ChangeMarketingConsent(MarketingConsent.SMS, true))
+            viewModel.onIntent(PushNotificationIntent.ChangeMarketingConsent(MarketingConsent.EMAIL, true))
+            viewModel.onIntent(PushNotificationIntent.ChangeMarketingConsent(MarketingConsent.PUSH, true))
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.pushUpdateCalls.size == 3
@@ -197,7 +231,7 @@ class SettingCompletionTest {
     fun connectedAccounts_linkThenUnlink_appliesExactPayloadAndServerState() {
         setHarnessContent()
         val scenario = CompletionUserScenario()
-        val repository = scenario.repository
+        val repository = scenario.accountRepository
         val linkGate = scenario.enqueueConnectedLink()
         val unlinkGate = scenario.enqueueConnectedUnlink()
         val viewModel = ConnectedAccountsViewModel(repository)
@@ -206,7 +240,7 @@ class SettingCompletionTest {
         }
 
         composeRule.runOnIdle {
-            viewModel.link(provider = "google", accessToken = "google-access-token")
+            viewModel.onIntent(ConnectedAccountsIntent.Link(provider = "google", accessToken = "google-access-token"))
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.connectedLinkCalls.size == 1
@@ -237,7 +271,7 @@ class SettingCompletionTest {
         )
 
         composeRule.runOnIdle {
-            viewModel.onToggle(provider = "google", enabled = false)
+            viewModel.onIntent(ConnectedAccountsIntent.Toggle(provider = "google", enabled = false))
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.connectedUnlinkCalls.size == 1
@@ -263,7 +297,7 @@ class SettingCompletionTest {
     fun receiverRegistration_failureThenRetry_succeedsWithSameNormalizedPayload() {
         setHarnessContent()
         val scenario = CompletionUserScenario()
-        val repository = scenario.repository
+        val repository = scenario.receiverRepository
         val firstGate = scenario.enqueueReceiverCreate()
         val retryGate = scenario.enqueueReceiverCreate()
         val viewModel = ReceiverRegisterViewModel(repository)
@@ -277,12 +311,14 @@ class SettingCompletionTest {
             )
 
         composeRule.runOnIdle {
-            viewModel.register(
-                name = expectedCall.name,
-                relation = expectedCall.relation,
-                phone = expectedCall.phone,
-                email = expectedCall.email,
-                message = "",
+            viewModel.onIntent(
+                ReceiverRegisterIntent.Register(
+                    name = expectedCall.name,
+                    relation = expectedCall.relation,
+                    phone = expectedCall.phone,
+                    email = expectedCall.email,
+                    message = "",
+                ),
             )
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
@@ -292,17 +328,19 @@ class SettingCompletionTest {
 
         firstGate.complete(Result.failure(IllegalStateException("temporary failure")))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.receiver_register_failed)
+            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.setting_receiver_register_failed)
         }
         assertFalse(viewModel.uiState.value.isLoading)
 
         composeRule.runOnIdle {
-            viewModel.register(
-                name = expectedCall.name,
-                relation = expectedCall.relation,
-                phone = expectedCall.phone,
-                email = expectedCall.email,
-                message = "",
+            viewModel.onIntent(
+                ReceiverRegisterIntent.Register(
+                    name = expectedCall.name,
+                    relation = expectedCall.relation,
+                    phone = expectedCall.phone,
+                    email = expectedCall.email,
+                    message = "",
+                ),
             )
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
@@ -315,14 +353,52 @@ class SettingCompletionTest {
 
         retryGate.complete(Result.success(ReceiverCreated(receiverId = RECEIVER_ID, authCode = "AUTH-77")))
 
-        assertEquals(ReceiverRegisterEvent.RegisterSuccess, awaitEvent(viewModel.events))
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            viewModel.uiState.value.pendingEvent == ReceiverRegisterEvent.RegisterSuccess
+        }
+    }
+
+    @Test
+    fun receiverRegistration_requiresValidEmailBeforeEnablingRegister() {
+        val viewModel = ReceiverRegisterViewModel(FakeUserReceiverRepository.strict())
+        composeRule.setContent {
+            AfternoteTheme {
+                ReceiverRegisterScreen(
+                    onBackClick = {},
+                    onRegisterSuccess = {},
+                    viewModel = viewModel,
+                    inviteViewModel = receiverInviteViewModel(),
+                )
+            }
+        }
+        val registerButton = hasText("등록") and hasClickAction()
+
+        composeRule.onNode(registerButton).assertIsNotEnabled()
+        composeRule.onNodeWithText("이름을 입력하세요").performTextInput("김수신")
+        composeRule.onNodeWithText("연락처를 지정해주세요").performTextInput("01012345678")
+        composeRule
+            .onNode(hasText("관계를 선택하세요") and hasClickAction())
+            .performClick()
+        composeRule.onNodeWithText("어머니").performClick()
+        // 이메일 필드(6행 중 5번째, index 4)는 테스트 뷰포트 밖이라 LazyColumn이 아직 구성하지 않는다 —
+        // performScrollTo()는 이미 구성된 노드만 찾을 수 있어 인덱스로 직접 스크롤한다.
+        composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(4)
+        composeRule
+            .onNodeWithText("afternote@email.com")
+            .performTextInput("invalid-email")
+        composeRule.onNode(registerButton).assertIsNotEnabled()
+
+        composeRule.onNodeWithText("invalid-email").performTextClearance()
+        composeRule.onNodeWithText("afternote@email.com").performTextInput("receiver@afternote.com")
+
+        composeRule.onNode(registerButton).assertIsEnabled()
     }
 
     @Test
     fun receiverEdit_serialFailurePartialFailureThenRetry_sendsExactPayloadOncePerAttempt() {
         setHarnessContent()
         val scenario = CompletionUserScenario()
-        val repository = scenario.repository
+        val repository = scenario.receiverRepository
         val firstBasicGate = scenario.enqueueReceiverUpdate()
         val retryBasicGate = scenario.enqueueReceiverUpdate()
         val retryMessageGate = scenario.enqueueReceiverMessageUpdate()
@@ -330,8 +406,9 @@ class SettingCompletionTest {
         val finalMessageGate = scenario.enqueueReceiverMessageUpdate()
         val viewModel =
             ReceiverEditViewModel(
-                savedStateHandle = SavedStateHandle(mapOf("receiverId" to RECEIVER_ID)),
-                userRepository = repository,
+                route = SettingRoute.RecipientEditRoute(RECEIVER_ID),
+                receiverRepository = repository,
+                updateReceiverInfo = UpdateReceiverInfoUseCase(repository),
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.receiver == COMPLETION_DEFAULT_RECEIVER_DETAIL
@@ -350,12 +427,14 @@ class SettingCompletionTest {
                 message = "수정한 마지막 인사말",
             )
         val update: () -> Unit = {
-            viewModel.update(
-                name = expectedBasicCall.name,
-                relation = expectedBasicCall.relation,
-                phone = expectedBasicCall.phone,
-                email = expectedBasicCall.email,
-                message = expectedMessageCall.message,
+            viewModel.onIntent(
+                ReceiverEditIntent.Update(
+                    name = expectedBasicCall.name,
+                    relation = expectedBasicCall.relation,
+                    phone = expectedBasicCall.phone,
+                    email = expectedBasicCall.email,
+                    message = expectedMessageCall.message,
+                ),
             )
         }
 
@@ -372,7 +451,7 @@ class SettingCompletionTest {
 
         firstBasicGate.complete(Result.failure(IllegalStateException("basic update failed")))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.receiver_edit_failed)
+            viewModel.uiState.value.errorMessage == UiText.Resource(SettingR.string.setting_receiver_edit_failed)
         }
         assertFalse(viewModel.uiState.value.isSaving)
         assertTrue(repository.receiverMessageCalls.isEmpty())
@@ -388,7 +467,7 @@ class SettingCompletionTest {
         retryMessageGate.complete(Result.failure(IllegalStateException("message update failed")))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.errorMessage ==
-                UiText.Resource(SettingR.string.receiver_message_update_partial_failed)
+                UiText.Resource(SettingR.string.setting_receiver_message_update_partial_failed)
         }
         assertEquals(listOf(expectedMessageCall), repository.receiverMessageCalls)
 
@@ -402,10 +481,16 @@ class SettingCompletionTest {
         }
         finalMessageGate.complete(Result.success(Unit))
 
-        assertEquals(ReceiverEditEvent.EditSuccess, awaitEvent(viewModel.events))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            !viewModel.uiState.value.isSaving
+            viewModel.uiState.value.pendingEvent == ReceiverEditEvent.EditSuccess
         }
+        composeRule.runOnIdle { viewModel.onIntent(ReceiverEditIntent.ConsumeSuccess) }
+        assertEquals(null, viewModel.uiState.value.pendingEvent)
+        // 신호를 소비해도 저장 완료 사실은 남아, 화면이 닫히는 동안의 재제출을 무시한다.
+        assertFalse(viewModel.uiState.value.isSaving)
+        assertTrue(viewModel.uiState.value.isSaved)
+        composeRule.runOnIdle(update)
+        composeRule.waitForIdle()
         assertEquals(
             listOf(expectedBasicCall, expectedBasicCall, expectedBasicCall),
             repository.receiverUpdateCalls,
@@ -420,11 +505,12 @@ class SettingCompletionTest {
             CompletionUserScenario().apply {
                 receiverDetail = COMPLETION_DEFAULT_RECEIVER_DETAIL.copy(phone = null)
             }
-        val repository = scenario.repository
+        val repository = scenario.receiverRepository
         val viewModel =
             ReceiverEditViewModel(
-                savedStateHandle = SavedStateHandle(mapOf("receiverId" to RECEIVER_ID)),
-                userRepository = repository,
+                route = SettingRoute.RecipientEditRoute(RECEIVER_ID),
+                receiverRepository = repository,
+                updateReceiverInfo = UpdateReceiverInfoUseCase(repository),
             )
 
         composeRule.setContent {
@@ -440,14 +526,14 @@ class SettingCompletionTest {
             viewModel.uiState.value.receiver == scenario.receiverDetail
         }
 
-        composeRule.onNodeWithText("연락처를 입력해주세요.").assertIsDisplayed()
+        composeRule.onNodeWithText("연락처를 입력해주세요.").assertExists()
         composeRule.onNodeWithText("수정").assertIsNotEnabled()
         assertTrue(repository.receiverUpdateCalls.isEmpty())
     }
 
     @Test
     fun receiverRegister_blankPhoneWiring_disablesSubmitAndShowsRequiredMessage() {
-        val repository = FakeUserRepository(receivers = emptyList())
+        val repository = FakeUserReceiverRepository(receivers = emptyList())
         val viewModel = ReceiverRegisterViewModel(repository)
 
         composeRule.setContent {
@@ -456,6 +542,7 @@ class SettingCompletionTest {
                     onBackClick = {},
                     onRegisterSuccess = {},
                     viewModel = viewModel,
+                    inviteViewModel = receiverInviteViewModel(),
                 )
             }
         }
@@ -463,6 +550,7 @@ class SettingCompletionTest {
         composeRule.onNodeWithText("이름을 입력하세요").performTextInput("김수신")
         composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("afternote@email.com"))
         composeRule.onNodeWithText("afternote@email.com").performTextInput("receiver@afternote.local")
+        composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("연락처를 지정해주세요"))
 
         composeRule.onNodeWithText("연락처를 입력해주세요.").assertIsDisplayed()
         composeRule.onNodeWithText("등록").assertIsNotEnabled()
@@ -473,7 +561,7 @@ class SettingCompletionTest {
     fun deliveryCondition_failureThenRetry_succeedsWithExactReceiverPatch() {
         setHarnessContent()
         val scenario = CompletionUserScenario()
-        val repository = scenario.repository
+        val repository = scenario.receiverRepository
         val initialConditions = completionDefaultDeliveryConditions()
         scenario.deliveryConditions =
             ReceiverDeliveryConditions(receiverId = RECEIVER_ID, conditions = initialConditions)
@@ -481,8 +569,9 @@ class SettingCompletionTest {
         val retryGate = scenario.enqueueDeliveryUpdate()
         val viewModel =
             DeliveryConditionViewModel(
-                savedStateHandle = SavedStateHandle(mapOf("receiverId" to RECEIVER_ID)),
-                userRepository = repository,
+                route = SettingRoute.AfterDeliveryRoute(RECEIVER_ID),
+                receiverRepository = repository,
+                updateTimeLetterDeliveryCondition = UpdateTimeLetterDeliveryConditionUseCase(repository),
             )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.isInitialized
@@ -498,8 +587,8 @@ class SettingCompletionTest {
         val expectedCall = CompletionDeliveryUpdateCall(RECEIVER_ID, expectedConditions)
 
         composeRule.runOnIdle {
-            viewModel.onConditionTypeSelected(index = 1)
-            viewModel.onSave()
+            viewModel.onIntent(DeliveryConditionIntent.SelectConditionType(DeliveryConditionType.RECEIVER_REQUEST))
+            viewModel.onIntent(DeliveryConditionIntent.Save)
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.deliveryUpdateCalls.size == 1
@@ -515,7 +604,7 @@ class SettingCompletionTest {
         assertFalse(viewModel.uiState.value.isSaving)
         assertEquals(initialConditions, viewModel.uiState.value.conditions)
 
-        composeRule.runOnIdle { viewModel.onSave() }
+        composeRule.runOnIdle { viewModel.onIntent(DeliveryConditionIntent.Save) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.deliveryUpdateCalls.size == 2
         }
@@ -536,11 +625,18 @@ class SettingCompletionTest {
             ),
         )
 
-        assertEquals(Unit, awaitEvent(viewModel.saveSuccess))
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) { viewModel.uiState.value.isSaveSuccessPending }
+        composeRule.runOnIdle { viewModel.onIntent(DeliveryConditionIntent.ConsumeSuccess) }
+        assertFalse(viewModel.uiState.value.isSaveSuccessPending)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value.conditions == serverConditions
         }
+        // 신호를 소비해도 저장 완료 사실은 남아, 화면이 닫히는 동안의 재제출을 무시한다.
         assertFalse(viewModel.uiState.value.isSaving)
+        assertTrue(viewModel.uiState.value.isSaved)
+        composeRule.runOnIdle { viewModel.onIntent(DeliveryConditionIntent.Save) }
+        composeRule.waitForIdle()
+        assertEquals(listOf(expectedCall, expectedCall), repository.deliveryUpdateCalls)
     }
 
     @Test
@@ -558,36 +654,40 @@ class SettingCompletionTest {
                     onGetRefreshToken = null
                 }
         // 탈퇴 성공 뒤 세션을 정확히 한 번, 서버 호출 뒤에 정리하는 것은 저장소 구현의 계약이라
-        // :core:data `UserRepositoryImplTest` 의 deleteAccount 계열이 고정한다. 여기서는 화면 상태 전이만 본다.
-        val repository =
-            FakeUserRepository.strict().apply {
+        // :feature:setting:data `SettingAccountRepositoryImplTest` 의 deleteAccount 계열이 고정한다.
+        // 여기서는 화면 상태 전이만 본다.
+        val profileRepository =
+            FakeMyProfileRepository.strict().apply {
                 onGetMyProfile = { COMPLETION_DEFAULT_USER }
+            }
+        val repository =
+            FakeSettingAccountRepository.strict().apply {
                 onDeleteAccount = { deleteGates.removeFirst().await() }
             }
-        val viewModel = SettingViewModel(authRepository, repository)
+        val viewModel = SettingViewModel(authRepository, profileRepository, repository)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.uiState.value is SettingUiState.Success
+            viewModel.uiState.value.profile is SettingProfileState.Success
         }
 
-        composeRule.runOnIdle { viewModel.deleteAccount() }
+        composeRule.runOnIdle { viewModel.onIntent(SettingIntent.DeleteAccount) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.deleteAccountCalls == 1
         }
-        assertEquals(WithdrawUiState.Loading, viewModel.withdrawUiState.value)
+        assertEquals(WithdrawUiState.Loading, viewModel.uiState.value.withdraw)
 
         firstGate.completeExceptionally(IllegalStateException("서버가 503 으로 거절했다"))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.withdrawUiState.value == WithdrawUiState.Error
+            viewModel.uiState.value.withdraw == WithdrawUiState.Error
         }
 
-        composeRule.runOnIdle { viewModel.deleteAccount() }
+        composeRule.runOnIdle { viewModel.onIntent(SettingIntent.DeleteAccount) }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             repository.deleteAccountCalls == 2
         }
 
         retryGate.complete(Unit)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.withdrawUiState.value == WithdrawUiState.Success
+            viewModel.uiState.value.withdraw == WithdrawUiState.Success
         }
         assertEquals(2, repository.deleteAccountCalls)
     }
@@ -622,6 +722,13 @@ private val COMPLETION_DEFAULT_PUSH_SETTING =
         afterNote = true,
     )
 
+private val COMPLETION_DEFAULT_MARKETING_CONSENT =
+    UserMarketingConsent(
+        sms = true,
+        email = true,
+        push = false,
+    )
+
 private val COMPLETION_DEFAULT_RECEIVER_DETAIL =
     ReceiverDetail(
         receiverId = 77L,
@@ -633,7 +740,6 @@ private val COMPLETION_DEFAULT_RECEIVER_DETAIL =
         timeLetterCount = 2,
         afterNoteCount = 3,
         message = "기존 마지막 인사말",
-        authCode = "AUTH-77",
     )
 
 private fun completionConnectedAccounts(
@@ -657,7 +763,6 @@ private fun completionUpdatedReceiver(call: CompletionReceiverEditCall) =
         receiverId = call.receiverId,
         name = call.name,
         relation = call.relation,
-        authCode = "AUTH-77",
     )
 
 private fun completionDefaultDeliveryConditions() =
@@ -701,22 +806,17 @@ private class CompletionUserScenario {
     val completedPushUpdates: Int
         get() = synchronized(this) { pushUpdateCompletions }
 
-    val repository =
-        FakeUserRepository.strict().apply {
-            onReceiverListFlow = { flowOf(emptyList()) }
+    val profileRepository =
+        FakeMyProfileRepository.strict().apply {
             onGetMyProfile = { COMPLETION_DEFAULT_USER }
             onUpdateMyProfile = { _, _, _ ->
                 takeGate(profileUpdateGates, "updateMyProfile").await().getOrThrow()
             }
-            onGetMyPushSettings = { COMPLETION_DEFAULT_PUSH_SETTING }
-            onUpdateMyPushSettings = { _, _, _ ->
-                val gate = takeGate(pushUpdateGates, "updateMyPushSettings")
-                try {
-                    gate.await().getOrThrow()
-                } finally {
-                    synchronized(this@CompletionUserScenario) { pushUpdateCompletions += 1 }
-                }
-            }
+        }
+
+    val receiverRepository =
+        FakeUserReceiverRepository.strict().apply {
+            onReceiverListFlow = { flowOf(emptyList()) }
             onCreateReceiver = { _, _, _, _, _ ->
                 takeGate(receiverCreateGates, "createReceiver").await().getOrThrow()
             }
@@ -737,12 +837,37 @@ private class CompletionUserScenario {
             onUpdateReceiverMessage = { _, _ ->
                 takeGate(receiverMessageGates, "updateReceiverMessage").await().getOrThrow()
             }
+        }
+
+    val accountRepository =
+        FakeSettingAccountRepository.strict().apply {
             onGetConnectedAccounts = { completionConnectedAccounts() }
             onLinkConnectedAccount = { _, _ ->
                 takeGate(connectedLinkGates, "linkConnectedAccount").await().getOrThrow()
             }
             onUnlinkConnectedAccount = {
                 takeGate(connectedUnlinkGates, "unlinkConnectedAccount").await().getOrThrow()
+            }
+        }
+
+    val notificationRepository =
+        FakeSettingNotificationRepository.strict().apply {
+            onGetMyPushSettings = { COMPLETION_DEFAULT_PUSH_SETTING }
+            onUpdateMyPushSettings = { _, _, _ ->
+                val gate = takeGate(pushUpdateGates, "updateMyPushSettings")
+                try {
+                    gate.await().getOrThrow()
+                } finally {
+                    synchronized(this@CompletionUserScenario) { pushUpdateCompletions += 1 }
+                }
+            }
+            onGetMyMarketingConsents = { COMPLETION_DEFAULT_MARKETING_CONSENT }
+            onUpdateMyMarketingConsents = { sms, email, push ->
+                COMPLETION_DEFAULT_MARKETING_CONSENT.copy(
+                    sms = sms ?: COMPLETION_DEFAULT_MARKETING_CONSENT.sms,
+                    email = email ?: COMPLETION_DEFAULT_MARKETING_CONSENT.email,
+                    push = push ?: COMPLETION_DEFAULT_MARKETING_CONSENT.push,
+                )
             }
         }
 
@@ -791,3 +916,19 @@ private class CompletionUserScenario {
         method: String,
     ): T = synchronized(this) { gates.pollFirst() ?: error("$method gate was not prepared") }
 }
+
+internal object NoOpErrorReporter : ErrorReporter {
+    override fun writeFailure(
+        throwable: Throwable,
+        attributes: Map<String, String>,
+    ) = Unit
+}
+
+private fun receiverInviteViewModel() =
+    ReceiverInviteViewModel(
+        invitationRepository = FakeReceiverInvitationRepository(),
+        profileCacheRepository = FakeUserProfileCacheRepository(),
+        myProfileRepository = FakeMyProfileRepository(),
+        errorReporter = NoOpErrorReporter,
+        savedStateHandle = SavedStateHandle(),
+    )

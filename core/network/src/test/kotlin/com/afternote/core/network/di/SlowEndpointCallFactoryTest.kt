@@ -1,5 +1,7 @@
 package com.afternote.core.network.di
 
+import com.afternote.core.network.calladapter.ApiErrorCallAdapterFactory
+import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.junit.Assert.assertEquals
@@ -15,6 +17,9 @@ import java.util.concurrent.TimeUnit
  *
  * 인터셉터로는 `callTimeout` 을 못 늘린다 — read 만 늘리면 30초 호출 상한에 다시 걸린다.
  * 그래서 파생 클라이언트로 가른다. 이 테스트는 «가르는 것» 과 «나머지는 그대로» 를 함께 고정한다.
+ *
+ * 가르는 팩토리는 [NetworkModule] 파일 안에만 사는 구현이라, 검증은 모듈이 실제로 내놓는
+ * Retrofit 의 call factory 로 한다 — «앱이 쓰는 그 객체» 를 그대로 재는 경로다 (#1672).
  */
 class SlowEndpointCallFactoryTest {
     private val default =
@@ -24,7 +29,13 @@ class SlowEndpointCallFactoryTest {
             .callTimeout(30, TimeUnit.SECONDS)
             .build()
 
-    private val factory = SlowEndpointCallFactory(default)
+    private val factory: Call.Factory =
+        NetworkModule
+            .provideRetrofit(
+                okHttpClient = default,
+                json = NetworkModule.provideJson(),
+                apiErrorCallAdapterFactory = ApiErrorCallAdapterFactory(NetworkModule.provideJson()),
+            ).callFactory()
 
     @Test
     fun `주간 리포트는 늘어난 상한으로 나간다`() {

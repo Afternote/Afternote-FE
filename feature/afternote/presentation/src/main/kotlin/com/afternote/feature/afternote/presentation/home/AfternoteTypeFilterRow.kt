@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.home
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -18,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -32,8 +32,6 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.util.TYPE_FILTER_TABS
 import com.afternote.feature.afternote.presentation.shared.util.typeLabelResFor
 
-internal const val AFTERNOTE_CATEGORY_MORE_INDICATOR_TEST_TAG = "afternoteCategoryMoreIndicator"
-
 /**
  * 종류 필터 탭 행. `null` 은 "전체" 탭이다.
  *
@@ -43,14 +41,20 @@ internal const val AFTERNOTE_CATEGORY_MORE_INDICATOR_TEST_TAG = "afternoteCatego
  * 같은 관용구다.
  *
  * 노출 대상은 [TYPE_FILTER_TABS] 가 정한다.
+ *
+ * @param scrollState 가로 스크롤 위치. 탭 5개의 폭 합이 기본 화면 폭을 넘어 이 행은 실제로 스크롤된다
+ *   (fading edge 와 오른쪽 화살표 힌트가 있는 이유). 그래서 **이 행을 여러 본문에서 그리는 화면은 이
+ *   상태를 자기 쪽으로 끌어올려 넘겨야 한다** — 여기서만 `remember` 하면 본문 분기가 바뀌는 순간
+ *   서브트리가 폐기돼 위치가 0 으로 돌아가고, 오른쪽으로 밀어 고른 끝 탭이 전환 후 화면 밖으로 나간다
+ *   (#1635). 기본값은 이 행을 한 자리에서만 그리는 프리뷰·단위 테스트용이다.
  */
 @Composable
-fun AfternoteTypeFilterRow(
+internal fun AfternoteTypeFilterRow(
     onTabSelected: (AfternoteType?) -> Unit,
     modifier: Modifier = Modifier,
     selectedTab: AfternoteType? = null,
+    scrollState: ScrollState = rememberScrollState(),
 ) {
-    val scrollState = rememberScrollState()
     val canScrollRight by remember {
         derivedStateOf { scrollState.canScrollForward }
     }
@@ -121,8 +125,7 @@ fun AfternoteTypeFilterRow(
                 modifier =
                     Modifier
                         .padding(start = 8.dp)
-                        .size(16.dp)
-                        .testTag(AFTERNOTE_CATEGORY_MORE_INDICATOR_TEST_TAG),
+                        .size(16.dp),
             )
         }
     }
@@ -155,11 +158,11 @@ private fun TypeFilterItem(
                         if (isSelected) {
                             AfternoteDesign.colors.gray7
                         } else {
-                            // 시안(4327:43064 의 `tab btn` 컴포넌트)의 비선택 탭은 #A0A0A0 이고,
-                            // gray5(#9E9E9E)와 채널 차가 2/255 라 육안으로 구분되지 않는다.
+                            // 시안(4327:43064 의 `tab btn` 컴포넌트)의 비선택 탭은 #A0A0A0 이다.
+                            // 라이트 gray5 는 #1798 이 #9E9E9E 에서 #6E6E6E 로 내린 값이라(상세는 Gray5OnLight KDoc)
+                            // 시안보다 어둡고, gray1(#FAFAFA) 위 대비 4.885:1 로 WCAG AA 본문 4.5:1 을 넘는다.
                             // 종전 gray4(#BDBDBD)는 시안보다 밝아 대비가 1.80:1 까지 떨어져 있었다 (#1636).
-                            // gray5 로도 WCAG AA 4.5:1 은 못 넘는다(2.57:1) — 그 축은 팔레트에
-                            // 중간값이 없어 디자이너 결정이 필요하고 #1636 이 계속 추적한다.
+                            // 비선택 탭 색과 선택 구분 방식 자체는 #1636 이 PM 답변을 기다린다.
                             AfternoteDesign.colors.gray5
                         },
                 ),

@@ -145,14 +145,15 @@ export async function readLatestVersionCode(client, { log = console.log } = {}) 
         const tracks = await client.listTracks(editId);
         return maxVersionCode(bundles, tracks);
     } finally {
-        // 읽기 전용 조회다. commit 하지 않고 반드시 되돌린다.
+        // 읽기 전용 조회다. commit 대신 삭제를 시도한다.
         await discardEdit(client, editId, log);
     }
 }
 
 /**
  * edit 생성 → bundle 업로드 → internal track 갱신 → commit. 각 단계의 응답을 다음 단계의 전제로
- * 다시 확인하고, 어느 단계에서 실패하든 edit 를 정리한 뒤 원인을 그대로 올린다.
+ * 다시 확인한다. 포착한 예외에서는 edit 삭제를 시도하고 원인을 그대로 올린다.
+ * 취소·타임아웃으로 프로세스가 종료되면 이 catch 는 실행되지 않을 수 있다.
  */
 export async function publishInternalBundle(
     client,
@@ -165,11 +166,13 @@ export async function publishInternalBundle(
 
     const editId = await client.insertEdit();
     try {
-        // 같은 versionCode 재업로드는 Play 도 거절하지만, 그 거절은 수십 MB 를 올린 뒤에 온다.
-        // 업로드 전에 목록으로 먼저 막는다.
-        const existing = maxVersionCodeSet(await client.listBundles(editId));
-        if (existing.has(expected)) {
-            throw new Error(`versionCode ${expected} 는 이미 Play 에 올라가 있다 — 재사용할 수 없다.`);
+        // 빌드 사이 Console 업로드·승격이 끼었을 수 있으므로 probe 의 값을 재사용하지 않는다.
+        // 새 edit 에서 bundle 과 모든 track 을 조회해 수십 MB 를 전송하기 전에 다시 막는다.
+        const bundles = await client.listBundles(editId);
+        const tracks = await client.listTracks(editId);
+        const latest = maxVersionCode(bundles, tracks);
+        if (expected <= latest) {
+            throw new Error(`versionCode ${expected} 는 Play 현재 최대 versionCode ${latest} 보다 커야 한다.`);
         }
 
         const uploaded = await client.uploadBundle(editId, bundle);
@@ -208,10 +211,6 @@ export async function publishInternalBundle(
         await discardEdit(client, editId, log);
         throw error;
     }
-}
-
-function maxVersionCodeSet(bundlesResponse) {
-    return new Set((bundlesResponse?.bundles ?? []).map((bundle) => toVersionCode(bundle.versionCode)));
 }
 
 async function writeOutput(entries) {

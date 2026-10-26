@@ -1,50 +1,75 @@
 package com.afternote.feature.afternote.presentation.receiver.detail
 
-import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteRoute
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.receiver.domain.repository.ReceiverRepository
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * 수신 애프터노트 상세 ViewModel.
  *
  * - 상세 조회: [ReceiverRepository.getReceivedAfternoteDetail] (Retrofit baseUrl 기준
  *   `receiver-auth/after-notes/{afternoteId}` 경로 — 실제 경로는 data 모듈의 `ReceiverAfternoteApiService`).
- * - 상세 ID: [SavedStateHandle] 의 `afternoteId` (수신자 라우트 인자명).
+ * - 상세 ID: entry 가 assisted 로 넘긴 [ReceivedAfternoteRoute.DetailRoute] 의 `afternoteId`.
  *
  * 발신자 [com.afternote.feature.afternote.presentation.detail.AfternoteDetailViewModel] 과
  * 동일한 단일 [ReceivedAfternoteDetailUiState] + StateFlow 패턴을 따른다. 다만 받은 입장이라
  * 수정·삭제·작성자 표시명·수신자 목록은 보유하지 않는다.
  */
-@HiltViewModel
-class ReceivedAfternoteDetailViewModel
-    @Inject
+@HiltViewModel(assistedFactory = ReceivedAfternoteDetailViewModel.Factory::class)
+internal class ReceivedAfternoteDetailViewModel
+    @AssistedInject
     constructor(
-        savedStateHandle: SavedStateHandle,
+        @Assisted private val route: ReceivedAfternoteRoute.DetailRoute,
         private val receiverRepository: ReceiverRepository,
         private val errorReporter: ErrorReporter,
-    ) : ViewModel() {
+    ) : MviViewModel<ReceivedAfternoteDetailIntent, ReceivedAfternoteDetailUiState, ReceivedAfternoteDetailReducerEvent>(
+            ReceivedAfternoteDetailUiState.Loading,
+        ) {
         private val afternoteIdFromNav: Long =
-            savedStateHandle.toRoute<ReceivedAfternoteRoute.DetailRoute>().afternoteId
+            route.afternoteId
 
-        private val _uiState =
-            MutableStateFlow<ReceivedAfternoteDetailUiState>(ReceivedAfternoteDetailUiState.Loading)
-        val uiState: StateFlow<ReceivedAfternoteDetailUiState> = _uiState.asStateFlow()
+        override fun onIntent(intent: ReceivedAfternoteDetailIntent) {
+            when (intent) {
+                ReceivedAfternoteDetailIntent.Retry -> retry()
+                ReceivedAfternoteDetailIntent.RefreshOnReturn -> refreshOnReturn()
+            }
+        }
+
+        override fun reduce(
+            state: ReceivedAfternoteDetailUiState,
+            event: ReceivedAfternoteDetailReducerEvent,
+        ): ReceivedAfternoteDetailUiState =
+            when (event) {
+                ReceivedAfternoteDetailReducerEvent.Loading -> {
+                    ReceivedAfternoteDetailUiState.Loading
+                }
+
+                is ReceivedAfternoteDetailReducerEvent.ContentLoaded -> {
+                    ReceivedAfternoteDetailUiState.Success(detailId = event.id, contentUiModel = event.content)
+                }
+
+                is ReceivedAfternoteDetailReducerEvent.LoadFailed -> {
+                    if (event.keepsContent &&
+                        state is ReceivedAfternoteDetailUiState.Success
+                    ) {
+                        state
+                    } else {
+                        ReceivedAfternoteDetailUiState.Error(R.string.afternote_detail_load_error)
+                    }
+                }
+            }
 
         /** 진행 중인 상세 조회 — 첫 진입 이후의 ON_RESUME 이 실행 중인 로드와 겹치면 건너뛰기 위한 가드. */
         private var loadJob: Job? = null
@@ -62,7 +87,7 @@ class ReceivedAfternoteDetailViewModel
             loadDetail(afternoteIdFromNav)
         }
 
-        fun retry() {
+        private fun retry() {
             loadDetail(afternoteIdFromNav)
         }
 
@@ -73,7 +98,7 @@ class ReceivedAfternoteDetailViewModel
          * 첫 ON_RESUME(진입 자체)은 [isFirstResume] 로 스킵하고, 그 이후의 resume 이 실행 중인
          * 로드와 겹치면 진행 중인 Job 으로 건너뛴다.
          */
-        fun refreshOnReturn() {
+        private fun refreshOnReturn() {
             if (isFirstResume) {
                 isFirstResume = false
                 return
@@ -91,7 +116,7 @@ class ReceivedAfternoteDetailViewModel
             loadJob =
                 viewModelScope.launch {
                     if (showsLoading) {
-                        _uiState.value = ReceivedAfternoteDetailUiState.Loading
+                        dispatch(ReceivedAfternoteDetailReducerEvent.Loading)
                     }
                     val result = receiverRepository.getReceivedAfternoteDetail(afternoteId = afternoteId)
                     // 새 로드가 이 Job 을 취소했다면 화면은 그쪽이 결정한다. repository 는
@@ -101,24 +126,19 @@ class ReceivedAfternoteDetailViewModel
                     ensureActive()
                     result
                         .onSuccess { detail ->
-                            _uiState.value =
-                                ReceivedAfternoteDetailUiState.Success(
-                                    detailId = afternoteId,
-                                    contentUiModel = detail.toReceivedDetailContentUiModel(),
-                                )
+                            dispatch(
+                                ReceivedAfternoteDetailReducerEvent.ContentLoaded(afternoteId, detail.toReceivedDetailContentUiModel()),
+                            )
                         }.onFailure { e ->
                             // 화면을 유지하는 자동 갱신 실패도 기록한다 — 콘솔이 유일한 관측 지점이다.
                             errorReporter.recordAfternoteFailure(AfternoteFailureStage.RECEIVED_DETAIL_LOAD, e)
-                            _uiState.update { current ->
-                                if (keepsStateOnFailure && current is ReceivedAfternoteDetailUiState.Success) {
-                                    current
-                                } else {
-                                    ReceivedAfternoteDetailUiState.Error(
-                                        messageRes = R.string.afternote_detail_load_error,
-                                    )
-                                }
-                            }
+                            dispatch(ReceivedAfternoteDetailReducerEvent.LoadFailed(keepsStateOnFailure))
                         }
                 }
+        }
+
+        @AssistedFactory
+        interface Factory {
+            fun create(route: ReceivedAfternoteRoute.DetailRoute): ReceivedAfternoteDetailViewModel
         }
     }

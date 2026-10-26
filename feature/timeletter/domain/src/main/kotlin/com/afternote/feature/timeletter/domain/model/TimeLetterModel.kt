@@ -4,7 +4,6 @@ data class TimeLetter(
     val id: Long,
     val title: String?,
     val sendAt: String?,
-    val deliveredAt: String?,
     val status: TimeLetterStatus,
     val blocks: List<TimeLetterBlock>,
     val receiverIds: List<Long>,

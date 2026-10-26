@@ -3,7 +3,9 @@ package com.afternote.afternote_fe
 import androidx.lifecycle.SavedStateHandle
 import com.afternote.afternote_fe.notification.NotificationEntryRequest
 import com.afternote.afternote_fe.notification.NotificationEntrySource
+import com.afternote.core.common.notification.NotificationDestination
 import com.afternote.core.domain.testing.FakeAuthRepository
+import com.afternote.core.domain.testing.FakePendingReceiverInvitationStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -88,15 +90,18 @@ class MainViewModelNotificationTest {
     private fun viewModel(savedStateHandle: SavedStateHandle): MainViewModel =
         MainViewModel(
             authRepository = FakeAuthRepository(loggedIn = false),
+            pendingInvitationStore = FakePendingReceiverInvitationStore(),
             savedStateHandle = savedStateHandle,
         )
 
     private fun request(
         occurrenceId: String,
         source: NotificationEntrySource = NotificationEntrySource.FCM,
+        destination: NotificationDestination = NotificationDestination.HOME,
     ): NotificationEntryRequest =
         NotificationEntryRequest(
             source = source,
             occurrenceId = occurrenceId,
+            destination = destination,
         )
 }

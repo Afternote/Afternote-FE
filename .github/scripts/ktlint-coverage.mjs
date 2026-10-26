@@ -8,8 +8,8 @@
 // 「.kt 를 가진 모듈」이 아니라 **등록된 모듈 전부**다.
 //
 // ktlint 는 두 경로로 붙는다 — 모듈이 직접 적용하거나, ktlint 를 적용하는 컨벤션 플러그인을
-// 타거나. 컨벤션은 서로를 apply 하며 사슬을 이루므로(android.feature → android.library.compose →
-// android.library → android.lint) 여기서 그 사슬의 전이 폐포를 계산한다. 컨벤션이 새로 생겨도
+// 타거나. 컨벤션은 서로를 apply 하며 사슬을 이루므로(android.library.compose → android.library →
+// android.lint) 여기서 그 사슬의 전이 폐포를 계산한다. 컨벤션이 새로 생겨도
 // 목록을 손으로 고칠 필요가 없다.
 
 import fs from "node:fs/promises";

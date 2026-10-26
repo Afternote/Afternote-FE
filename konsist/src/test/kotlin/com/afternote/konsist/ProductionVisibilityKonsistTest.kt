@@ -283,76 +283,38 @@ class ProductionVisibilityKonsistTest {
     }
 
     private companion object {
-        val ISSUE_1671_PLATFORM =
-            setOf(
-                "app/src/main/java/com/afternote/afternote_fe/messaging/AfternoteFirebaseMessagingService.kt::class FcmNotificationContent [internal]",
-                "app/src/main/java/com/afternote/afternote_fe/messaging/AfternoteFirebaseMessagingService.kt::object FcmNotificationContentResolver [internal]",
-                "app/src/main/java/com/afternote/afternote_fe/messaging/AfternoteFirebaseMessagingService.kt::object FcmNotificationIdentity [internal]",
-                "build-logic/src/main/kotlin/BuildFingerprint.kt::function debugVersionNameSuffix [implicit-public]",
-                "build-logic/src/main/kotlin/BuildFingerprint.kt::function shortCommitSha [implicit-public]",
-                "build-logic/src/main/kotlin/BuildFingerprint.kt::property UNKNOWN_COMMIT_MARKER [implicit-public]",
-                "build-logic/src/main/kotlin/VersionCode.kt::property DEFAULT_AFTERNOTE_VERSION_CODE [implicit-public]",
-                "build-logic/src/main/kotlin/VersionCode.kt::property MAX_PLAY_VERSION_CODE [implicit-public]",
-            )
+        /** #1671 이 8건을 전부 `private` 로 줄였다. 형제 이슈들이 각자 자기 목록을 비우는 중이라 자리는 남긴다. */
+        val ISSUE_1671_PLATFORM = emptySet<String>()
 
+        /**
+         * #1672 잔여분 — `PROFILE_ICON_TEST_TAG` 를 참조하는 테스트가 **다른 모듈**(feature:afternote,
+         * feature:receiver presentation)에 있어 core 안에서 닫히지 않는다. 좁히려면 그 모듈들의
+         * 테스트를 함께 고쳐야 하므로 담당 모듈 이슈로 넘긴다.
+         */
         val ISSUE_1672_CORE =
             setOf(
-                "core/data/src/main/java/com/afternote/core/data/mapper/delivery/DeliveryConditionMapper.kt::function toDto [implicit-public]",
-                "core/network/src/main/kotlin/com/afternote/core/network/di/NetworkModule.kt::class SlowEndpointCallFactory [internal]",
-                "core/network/src/main/kotlin/com/afternote/core/network/interceptor/TokenAuthenticator.kt::class TokenReissueFailureException [internal]",
-                "core/ui/src/main/kotlin/com/afternote/core/ui/ViewModeSwitcher.kt::property VIEW_MODE_INDICATOR_TEST_TAG [internal]",
-                "core/ui/src/main/kotlin/com/afternote/core/ui/ViewModeSwitcher.kt::property VIEW_MODE_PILL_TEST_TAG [internal]",
-                "core/ui/src/main/kotlin/com/afternote/core/ui/calendar/BottomSheetCalendar.kt::function DatePickerContent [implicit-public]",
-                "core/ui/src/main/kotlin/com/afternote/core/ui/popup/ErrorPopup.kt::function AfternoteErrorPopupContent [internal]",
-                "core/ui/src/main/kotlin/com/afternote/core/ui/popup/Popup.kt::function PopupContent [internal]",
                 "core/ui/src/main/kotlin/com/afternote/core/ui/topbar/HomeTopBar.kt::property PROFILE_ICON_TEST_TAG [implicit-public]",
             )
 
-        val ISSUE_1673_AFTERNOTE =
-            setOf(
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/detail/AfternoteDetailRoute.kt::function DeleteInProgressOverlay [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/detail/MemorialDetailScreen.kt::property MEMORIAL_VIDEO_CARD_TEST_TAG [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/AfternoteEditorContent.kt::function EditorContent [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/AfternoteEditorScreen.kt::function editorContentSignature [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/AfternoteEditorViewModel.kt::function toAfternoteEditorError [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/mapper/EditorReceiverMapping.kt::function toAfternoteEditorReceiver [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/memorial/MemorialVideoUpload.kt::property MEMORIAL_VIDEO_ADD_TEST_TAG [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/selection/EditorServiceSelectionSheet.kt::function EditorServiceSelectionSheetContent [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/selection/EditorServiceSelectionSheet.kt::function filterEditorServiceOptions [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/selection/EditorServiceSelectionSheet.kt::function serviceSelectionSheetTitleResOrNull [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/editor/state/AfternoteEditorState.kt::property editorMessagesSaver [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/home/AfternoteTypeFilterRow.kt::property AFTERNOTE_CATEGORY_MORE_INDICATOR_TEST_TAG [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/navigation/AfternoteNavGraphTheme.kt::function AfternoteLightTheme [implicit-public]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/receiver/afternotelist/ReceiverAfternoteHomeViewModel.kt::function toUiModel [internal]",
-                "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/presentation/shared/util/AfternoteDisplayRes.kt::function getIconResForType [implicit-public]",
-            )
-
+        /**
+         * 남은 항목은 MVI 전환(#1807)이 다시 열 Content seam 이라 #1818 이 그 뒤에 판정한다.
+         * #1674 의 나머지(매퍼 2건·화면 helper 3건·요약 helper 2건·주간 날짜 복원)는 해소돼
+         * 목록에서 빠졌다 — 같은 계약은 공개 소유자(매퍼 진입점·ViewModel 상태·화면)로 본다.
+         */
         val ISSUE_1674_MINDRECORD =
             setOf(
-                "feature/mindrecord/data/src/main/kotlin/com/afternote/feature/mindrecord/data/mapper/WeeklyReportMapper.kt::function toDomainOrNull [implicit-public]",
                 "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/hometab/HomeTabMindRecordLazyItems.kt::function MemoriesSectionContent [internal]",
                 "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/memoryspace/MemorySpaceScreen.kt::function MemorySpaceContent [internal]",
-                "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/receiver/ReceiverMindRecordScreen.kt::function findOpenedRecord [internal]",
                 "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/DailyQuestionWriteScreen.kt::function DailyQuestionWriteScreenContent [internal]",
                 "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/DiaryScreen.kt::function DiaryListContent [internal]",
                 "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/DiaryWriteScreen.kt::function DiaryWriteScreenContent [internal]",
-                "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/WeeklyReportScreen.kt::function emotionCardDescription [internal]",
-                "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/screen/sender/WeeklyReportScreen.kt::function recordedSummaryHighlights [internal]",
-                "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/ReceiverMindRecordViewModel.kt::function toDomainMessage [internal]",
-                "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/RecordDetailViewModel.kt::function firstImageUrl [internal]",
-                "feature/mindrecord/presentation/src/main/kotlin/com/afternote/feature/mindrecord/presentation/viewmodel/WeeklyReportRecordedDays.kt::function resolveDateInWeekOrNull [internal]",
             )
 
-        val ISSUE_1675_ONBOARDING =
-            setOf(
-                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/OnboardingProfileScreen.kt::function handleProfileImagePickerResult [internal]",
-            )
+        /** #1675·#1829 해소. Screen과 Content는 각자 파일에서 수명·렌더 책임을 갖는다. */
+        val ISSUE_1675_ONBOARDING = emptySet<String>()
 
         val ISSUE_1676_RECEIVER =
             setOf(
-                "feature/receiver/data/src/main/kotlin/com/afternote/feature/receiver/data/mapper/ReceiverAfternoteListItemDtoToDomain.kt::class ReceiverListDecodingFailure [internal]",
-                "feature/receiver/data/src/main/kotlin/com/afternote/feature/receiver/data/mapper/ReceiverAfternoteListItemDtoToDomain.kt::class ReceiverListMappingFailure [internal]",
-                "feature/receiver/data/src/main/kotlin/com/afternote/feature/receiver/data/mapper/ReceiverAfternoteListItemDtoToDomain.kt::function toDomainOrNull [implicit-public]",
                 "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/deliveryverification/DocumentUploadScreen.kt::function DocumentUploadScreenContent [internal]",
                 "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/deliveryverification/IdentityVerificationEmailScreen.kt::function IdentityVerificationEmailScreenContent [internal]",
                 "feature/receiver/presentation/src/main/kotlin/com/afternote/feature/receiver/presentation/deliveryverification/MasterKeyScreen.kt::function MasterKeyScreenContent [internal]",
@@ -378,14 +340,13 @@ class ProductionVisibilityKonsistTest {
                 "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordCompleteScreen.kt::function FindPasswordCompleteScreen [implicit-public]",
                 "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordResetScreen.kt::function FindPasswordResetScreen [implicit-public]",
                 "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordScreen.kt::function FindPasswordScreen [implicit-public]",
-                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordViewModel.kt::class FindPasswordViewModel [implicit-public]",
+                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/findaccount/FindPasswordViewModel.kt::class FindPasswordViewModel [internal]",
             )
 
         /** #1671~#1677이 줄인다. 신규와 stale 항목 모두 실패해 목록은 정확한 현재 부채다. */
         val LEGACY_TEST_DRIVEN_VISIBILITY =
             ISSUE_1671_PLATFORM +
                 ISSUE_1672_CORE +
-                ISSUE_1673_AFTERNOTE +
                 ISSUE_1674_MINDRECORD +
                 ISSUE_1675_ONBOARDING +
                 ISSUE_1676_RECEIVER +
@@ -407,9 +368,9 @@ class ProductionVisibilityKonsistTest {
                 "app/src/main/java/com/afternote/afternote_fe/notification/" +
                     "NotificationIntentContract.kt::class NotificationEntrySource [internal]" to
                     "NotificationEntryRequest.source의 내부 계약 타입",
-                "core/ui/src/main/kotlin/com/afternote/core/ui/button/" +
-                    "AfternoteRadioGroup.kt::function AfternoteRadioGroup [implicit-public]" to
-                    "core:ui README에 문서화된 공용 컴포넌트",
+                "app/src/main/java/com/afternote/afternote_fe/update/" +
+                    "ForceUpdateGate.kt::class ForceUpdatePrompt [implicit-public]" to
+                    "ForceUpdateGate.prompt 가 노출하고 MainActivity 가 타입 추론으로 소비",
                 "core/ui/src/main/kotlin/com/afternote/core/ui/popup/" +
                     "AfternoteActionMenu.kt::class ActionMenuItem [implicit-public]" to
                     "AfternoteActionMenu 파라미터와 editDeleteActionMenuItems 반환값을 외부 feature가 타입 추론 소비",
@@ -419,9 +380,6 @@ class ProductionVisibilityKonsistTest {
                 "feature/afternote/presentation/src/main/kotlin/com/afternote/feature/afternote/" +
                     "presentation/editor/memorial/MemorialMediaSourceState.kt::class MemorialMediaSourceState [internal]" to
                     "다른 프로덕션 파일이 반환값을 타입 추론으로 소비",
-                "feature/onboarding/presentation/src/main/java/com/afternote/feature/onboarding/presentation/terms/" +
-                    "OnboardingTermsScreen.kt::class TermsType [implicit-public]" to
-                    "OnboardingTermsScreen 콜백이 노출하는 화면 계약 타입",
                 "feature/receiver/data/src/main/kotlin/com/afternote/feature/receiver/data/dto/" +
                     "ReceiverAfternoteDto.kt::class ReceivedMemorialVideoDto [implicit-public]" to
                     "ReceivedPlaylistDto.memorialVideo가 노출하는 직렬화 계약 타입",

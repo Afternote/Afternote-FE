@@ -126,7 +126,7 @@ internal class LocalStoreRegistryImpl(
     }
 
     /** 아직 디스크에 안 간 매니페스트 기록을 기다린다 — [clearScope] 선행 단계이자 재기동 테스트의 flush 지점. */
-    internal suspend fun awaitPendingRegistrations() {
+    private suspend fun awaitPendingRegistrations() {
         synchronized(lock) { pendingManifestJobs.toList() }.joinAll()
     }
 
@@ -196,7 +196,7 @@ internal class LocalStoreRegistryImpl(
         private const val TAG = "LocalStoreRegistry"
 
         /** 레지스트리 자신의 (name → scope) 영속 기록 파일 — [store] 의 name 으로 쓸 수 없다. */
-        internal const val MANIFEST_NAME = "local_store_registry"
+        private const val MANIFEST_NAME = "local_store_registry"
 
         private val SESSION_NAMES = stringSetPreferencesKey("session_store_names")
         private val DEVICE_NAMES = stringSetPreferencesKey("device_store_names")

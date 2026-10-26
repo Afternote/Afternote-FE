@@ -1,12 +1,12 @@
 package com.afternote.feature.receiver.presentation.senderdetail
 
-import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import com.afternote.feature.receiver.domain.model.ReceiverIdentity
 import com.afternote.feature.receiver.domain.testing.FakeReceiverAuthRepository
 import com.afternote.feature.receiver.domain.testing.FakeReceiverRepository
+import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -150,7 +150,7 @@ private class Fixture {
 
     fun viewModel(): SenderDetailViewModel =
         SenderDetailViewModel(
-            savedStateHandle = SavedStateHandle(mapOf("senderId" to senderId)),
+            route = ReceiverRoute.SenderDetailRoute(senderId = senderId),
             senderRegistry = registry,
             receiverRepository = receiver,
             receiverAuthRepository = auth,

@@ -1,14 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-   API 31 이상 기기의 클라우드 백업·기기 간 전송 규칙이다.
+   API 31 이상 기기의 클라우드 백업·기기 간 전송 규칙이다. API 31 미만은 backup_rules.xml 이 맡는다.
+   두 파일의 제외 목록은 항상 같이 고친다 — 한쪽만 고치면 반대쪽 API 대역에 구멍이 남는다.
+   제외 근거는 backup_rules.xml 의 주석에 한 벌로 적어 두었다.
    See https://developer.android.com/about/versions/12/backup-restore#xml-changes
 -->
 <data-extraction-rules>
     <cloud-backup>
         <!-- 타임레터 음성 녹음 임시 원본은 서버 업로드 전 사용자 육성이라 클라우드에 남기지 않는다 (#440 리뷰). -->
         <exclude domain="file" path="timeletter_audio/" />
+        <!-- 토큰·수신자 마스터키·프로필·알림 요청 이력이 전부 여기 있다 (#1876). -->
+        <exclude domain="file" path="datastore/" />
+        <exclude domain="sharedpref" path="afternote_receiver_auth" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="file" path="timeletter_audio/" />
+        <!--
+           기기 간 전송도 같은 제외를 쓴다. 사용자가 직접 옮기는 경로라 클라우드보다 안전해 보이지만,
+           옮겨진 토큰은 여전히 로그아웃이 닿지 않는 사본이고 NotificationPermission 은 옛 기기의
+           사실이라 새 기기에서 틀린다.
+        -->
+        <exclude domain="file" path="datastore/" />
+        <exclude domain="sharedpref" path="afternote_receiver_auth" />
     </device-transfer>
 </data-extraction-rules>

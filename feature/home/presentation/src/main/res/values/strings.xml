@@ -35,7 +35,11 @@
     <string name="home_receiver_download_all_button">모든 기록 내려받기</string>
     <string name="home_receiver_download_all_dialog_message">모든 기록을 내려받으시겠습니까?</string>
     <string name="home_receiver_download_all_failed">모든 기록 내려받기에 실패했습니다.</string>
+    <!-- 재시도 수단이 없는 스낵바(내보내기 미지원) 경로가 쓴다 — 재시도를 안내하지 않는다. -->
     <string name="home_receiver_download_all_save_failed">파일 저장에 실패했습니다.</string>
+    <string name="home_receiver_download_save_error_title">저장 실패</string>
+    <!-- 재시도 버튼이 있는 저장 실패 팝업 전용 문구다 (#1737). -->
+    <string name="home_receiver_download_save_error_description">파일 저장에 실패했습니다.\n다시 시도해 주세요.</string>
     <!-- 홈 탭과 문안이 같지만 모듈 분리로 사본을 둔다 — 발신자 홈(home_tab_*)과 독립 수정 가능해야 한다. -->
     <string name="home_receiver_error_message">정보를 불러오지 못했습니다.</string>
     <string name="home_receiver_retry">다시 시도</string>

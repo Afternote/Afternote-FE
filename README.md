@@ -90,7 +90,9 @@ debug 빌드는 빈 값으로도 통과하지만(로컬 개발 편의) 다음이
 
 ## 공유 debug keystore
 
-debug 빌드는 기본적으로 머신마다 다른 `~/.android/debug.keystore` 로 서명되어, 카카오 로그인 키 해시를 팀원 머신별로 콘솔에 등록해야 한다. 팀 공유 debug keystore 를 배치하면 전 머신이 동일 키 해시로 서명되어 콘솔 등록이 keystore 1개로 끝난다. (미배치 시에도 빌드는 정상 — 기본 debug keystore 폴백 — 대신 본인 머신 키 해시를 직접 등록해야 카카오 로그인이 동작한다.)
+debug 빌드는 기본적으로 머신마다 다른 `~/.android/debug.keystore` 로 서명되어, 카카오 로그인 키 해시를 팀원 머신별로 콘솔에 등록해야 한다. 팀 공유 debug keystore 를 배치하면 전 머신이 동일 키 해시로 서명되어 콘솔 등록이 keystore 1개로 끝난다.
+
+`DEBUG_*` 네 값이 모두 없으면 기본 debug keystore로 빌드는 계속되지만, `preDebugBuild`에 연결된 `checkDebugSigningForKakao`가 매번 경고한다(configuration cache 재사용 시에도 출력). 콘솔에 등록되지 않은 키로 서명하면 카카오톡이 설치되어 있어도 앱 로그인에 실패하고 웹(CustomTab) 로그인으로 폴백할 수 있다. **웹 로그인 성공만으로 카카오톡 앱-투-앱 경로 QA를 완료하지 않는다.** 공유 키를 설정했더라도 콘솔 등록 상태는 별도로 확인해야 한다.
 
 1. **keystore 수령·배치** — 위 1Password 공유 링크의 `debug_store_file_b64` 값을 복사한 뒤 홈 디렉토리에 복원한다. (공유 링크에는 파일 첨부가 실리지 않아 keystore 를 base64 텍스트로 전달한다.)
 
@@ -109,11 +111,25 @@ debug 빌드는 기본적으로 머신마다 다른 `~/.android/debug.keystore` 
 
 3. **적용 확인** — `./gradlew :app:signingReport` 출력의 `Variant: debug` 에서 `Store:` 가 공유 keystore 경로를 가리키는지 확인
 
-공유 keystore 의 카카오 키 해시 추출 명령 (Kakao Developers → 앱 → 플랫폼 → Android → 키 해시 등록·재확인용):
+현재 debug 빌드가 사용하는 keystore의 카카오 키 해시를 출력한다. 공유 키를 설정했다면 공유 인증서, 미설정이면 AGP 기본 인증서를 읽으며, 새 머신의 기본 keystore는 `validateSigningDebug`가 먼저 생성한다. 비밀번호나 개인키는 출력하지 않는다.
 
 ```bash
-keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-shared.jks | openssl sha1 -binary | openssl base64
+./gradlew :app:printDebugKakaoKeyHash
 ```
+
+`Debug Kakao key hash:` 뒤의 값을 Kakao Developers → 앱 → 플랫폼 → Android → 키 해시에 등록·재확인한다. 값은 서명 인증서의 SHA-1을 Base64로 인코딩한 것으로, `signingReport`의 콜론으로 구분된 SHA-1 문자열과 형식이 다르다([카카오 공식 안내](https://developers.kakao.com/docs/latest/ko/android/getting-started#key-hash)). 등록 후에는 카카오톡이 설치된 기기에서 앱 전환 후 로그인 완료까지 다시 확인한다.
+
+## 코딩 에이전트 도구 (선택)
+
+코딩 에이전트 설정은 저장소가 공유하지 않는다 — 사람마다 쓰는 도구와 구성이 다르고, 저장소 파일이 각자 머신에서 실행되는 것을 정하면 리뷰가 그것까지 책임져야 한다. `.claude/`·`CLAUDE.md`·`AGENTS.md`·`.codex/`·`.mcp.json` 은 모두 `.gitignore` 대상이며 각자 자기 환경에 등록한다.
+
+에뮬레이터·실기기를 에이전트로 제어하려면 아래 MCP 서버를 한 번 등록한다. (`-s user` 는 이 머신의 모든 프로젝트에 적용한다.)
+
+```bash
+claude mcp add mobile -s user -- npx -y claude-in-mobile@3.8.1
+```
+
+등록 확인은 `claude mcp list` 로 한다. 기기 제어를 쓰지 않으면 등록하지 않아도 된다.
 
 ---
 
@@ -167,12 +183,8 @@ Kover는 임의의 절대 커버리지 목표를 강제하지 않는다. 정확�
 
 정기·기본 브랜치 수동 검증은 PR critical path 밖에서 minSdk API 26과 targetSdk API 36 경계 smoke도 실행한다. 문서 링크는 PR에서 로컬 경로·heading anchor를 검사하고 외부 URL은 주간 실행으로 분리하며, release AAB/R8 preflight는 `develop`에서 주 2회 조기 검증한다.
 
-## 코드 리뷰
+## 머지
 
-- Draft가 아닌 내부 팀원 PR이 열리거나 리뷰 가능 상태가 되면 [자동 요청 workflow](.github/workflows/review-request-all.yml)가 작성자를 제외한 팀원에게 리뷰를 요청한다. 요청 인원 수와 필수 승인 수는 같은 뜻이 아니다.
-- 현재 `develop`·`main` 머지에는 **승인 1건**이 필요하다. `main`은 모든 리뷰 스레드 해결도 필요하다.
-- 리뷰 결과는 GitHub의 `APPROVED`·`CHANGES_REQUESTED`·일반 코멘트로 표현한다. 별도 RCA prefix나 12시간 SLA는 두지 않는다.
-- [리뷰 적체 가드](.github/workflows/review-debt-guard.yml)는 응답을 기다리는 다른 PR이 남았거나 자기 PR의 최신 변경요청 뒤 아무 조치도 하지 않은 팀원의 새 PR을 닫을 수 있다. 각 PR은 팀원 한 명이 먼저 유효한 판정을 내리면 최초 미응답 목록에서 빠지고, 작성자가 실질 커밋이나 응답을 남기면 작성자 대기 목록에서 빠진다.
-- `awaiting-author` 라벨은 변경요청 뒤 작성자 무조치 상태를 보여 주는 표식이다. 새 PR 가드는 라벨 갱신 시점에 의존하지 않고 같은 판정을 현재 열린 PR에 다시 적용한다.
-- 쓰기 권한이 있는 리뷰어별 최신 `APPROVED`·`CHANGES_REQUESTED` 가운데 PR 전체에서 가장 늦은 판정을 최종 판정으로 사용한다. 가장 늦은 판정이 승인이면 더 오래된 변경 요청은 자동 해제되고, 승인 뒤에 새 변경 요청이 오면 다시 차단된다.
-- 긴급 PR은 근거가 있을 때만 `review-debt-exempt` 라벨로 적체 가드를 우회한다.
+- PR의 담당자는 올린 사람이 아니라 **어사인된 사람**이다. 어사인이 비어 있으면 [자동 어사인 workflow](.github/workflows/pr-assign-author.yml)가 작성자를 건다. 사람이 담당자를 바꾼 것은 되돌리지 않는다.
+- `develop`·`main` 머지에 리뷰 승인은 필요 없다. PR 경유, 필수 검사, `develop`의 merge queue는 그대로 요구된다.
+- `develop` 대상 PR은 1hyok가 모든 파일을 Viewed로 체크하면 [Viewed 자동 머지 workflow](.github/workflows/viewed-auto-merge.yml)가 10분 안팎으로 자동 머지(Merge when ready)를 예약한다. Viewed 체크에는 이벤트가 없어 주기 실행으로 훑고, 본인 체크만 조회되므로 1hyok의 읽기 전용 토큰을 `VIEWED_TOKEN` 시크릿으로 둔다. 필수 검사가 통과해야 merge queue로 들어간다. 이 workflow는 예약을 걸기만 하고 풀거나 큐에서 빼지 않으므로, Viewed가 덜 찬 PR도 직접 예약하거나 큐에 넣으면 그대로 머지된다. 예약을 멈추려면 PR 화면에서 끈다.

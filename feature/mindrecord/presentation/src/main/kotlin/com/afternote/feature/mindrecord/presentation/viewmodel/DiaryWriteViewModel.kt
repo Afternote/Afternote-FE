@@ -20,6 +20,7 @@ import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
 import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
 import com.afternote.feature.mindrecord.presentation.usecase.LoadMindRecordDraftsUseCase
+import com.afternote.feature.mindrecord.presentation.util.isHtmlBlank
 import com.afternote.feature.mindrecord.presentation.util.toWireContent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,9 +60,9 @@ class DiaryWriteViewModel
         val uiState: StateFlow<DiaryWriteUiState> = _uiState.asStateFlow()
 
         init {
-            // 이어쓰기(임시저장)일 때만 «이어쓰는 중» 으로 표시한다 — 정식 기록 수정은 아니다 (#582).
-            if (editingDiaryId != null && route.isDraft) {
-                _uiState.update { it.copy(isEditingDraft = true) }
+            // 이어쓰기든 정식 기록 수정이든 덮어쓸 원본이 있다 — 프리필 가드는 둘을 함께 본다 (#2027).
+            if (editingDiaryId != null) {
+                _uiState.update { it.copy(isEditingExistingRecord = true) }
             }
             loadReceivers()
             loadDraftCount()
@@ -84,6 +85,22 @@ class DiaryWriteViewModel
 
         fun onContentChanged(value: String) {
             _uiState.update { it.copy(content = value) }
+        }
+
+        /**
+         * 날짜 행에서 고른 기록일을 싣는다 (#1008).
+         *
+         * **미래 날짜는 받지 않는다.** 서버가 400(code 2101)으로 거절하므로, 상태에 넣으면
+         * 사용자는 저장을 눌러 봐야 실패를 안다. 고르는 순간 사유와 함께 막는다.
+         */
+        fun onDateSelected(date: LocalDate) {
+            if (date.isAfter(LocalDate.now())) {
+                _uiState.update {
+                    it.copy(dateError = UiText.Resource(R.string.mindrecord_error_diary_future_date))
+                }
+                return
+            }
+            _uiState.update { it.copy(date = date, isDateChosen = true, dateError = null) }
         }
 
         fun onMoodSelected(mood: TodayMood) {
@@ -125,25 +142,31 @@ class DiaryWriteViewModel
         suspend fun uploadMedia(uriString: String): String? {
             // 실패 문구의 수명은 «다음 업로드 시작까지» 다 — 화면에 걷는 수단이 따로 없고,
             // 걷는 함수만 두면 호출부 0건인 죽은 코드가 된다 (#1019 리뷰 지적).
-            _uiState.update { it.copy(isUploadingImage = true, imageUploadError = null) }
-            return photoUploadRepository
-                .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
-                .onSuccess { uploaded ->
-                    // 제출 직전 fileKey 로 바꿀 대상이다 (#1016).
-                    uploadedFileKeysByUrl[uploaded.fileUrl] = uploaded.fileKey
-                    _uiState.update { it.copy(isUploadingImage = false) }
-                }.onFailure { e ->
-                    // 첨부가 빠진 채 저장이 이어질 수 있는 자리라 남긴다 (#964).
-                    errorReporter.recordMindRecordFailure(MindRecordFailureStage.MEDIA_UPLOAD, e)
-                    // null 로 흡수하면 사용자는 이미지가 붙은 줄 알고 저장한다 (#716).
-                    _uiState.update {
-                        it.copy(
-                            isUploadingImage = false,
-                            imageUploadError = UiText.Resource(R.string.mindrecord_error_image_upload_failed),
-                        )
-                    }
-                }.getOrNull()
-                ?.fileUrl
+            _uiState.update {
+                it.copy(uploadingImageCount = it.uploadingImageCount + 1, imageUploadError = null)
+            }
+            // finally 로 내려놓는다 — 취소도 여기를 지난다. 작성 화면의 scope 가 업로드를
+            // 소유하므로 구성 변경·화면 이탈이면 코루틴만 끊기고 `Result` 는 오지 않는다.
+            // 그 경로에 내려놓을 자리가 없어 잠금이 남고, 사용자는 관계없는 첨부를 한 번 더
+            // 성공시켜야만 저장할 수 있었다 (#2030).
+            try {
+                return photoUploadRepository
+                    .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
+                    .onSuccess { uploaded ->
+                        // 제출 직전 fileKey 로 바꿀 대상이다 (#1016).
+                        uploadedFileKeysByUrl[uploaded.fileUrl] = uploaded.fileKey
+                    }.onFailure { e ->
+                        // 첨부가 빠진 채 저장이 이어질 수 있는 자리라 남긴다 (#964).
+                        errorReporter.recordMindRecordFailure(MindRecordFailureStage.MEDIA_UPLOAD, e)
+                        // null 로 흡수하면 사용자는 이미지가 붙은 줄 알고 저장한다 (#716).
+                        _uiState.update {
+                            it.copy(imageUploadError = UiText.Resource(R.string.mindrecord_error_image_upload_failed))
+                        }
+                    }.getOrNull()
+                    ?.fileUrl
+            } finally {
+                _uiState.update { it.copy(uploadingImageCount = (it.uploadingImageCount - 1).coerceAtLeast(0)) }
+            }
         }
 
         fun submit(isDraft: Boolean = false) {
@@ -167,8 +190,12 @@ class DiaryWriteViewModel
             }
             // 고르지 않은 기분을 지어내지 않는다. 지어내면 그것이 사용자 데이터가 되고
             // (이어쓰기로 열면 «그냥그래» 가 이미 선택돼 보인다) 주간리포트 집계와 감정
-            // 분석 입력에도 그대로 들어간다. 위 가드가 미선택을 이미 막는다.
-            val mood = state.mood ?: return
+            // 분석 입력에도 그대로 들어간다.
+            //
+            // 임시저장은 미선택 그대로 null 을 싣는다 — 서버가 그 자리를 열어 뒀다
+            // (BE#243 → PR #267). 정식 등록은 위 `missingForSubmit` 가드가 미선택을 막는다.
+            val mood = state.mood
+            if (!isDraft && mood == null) return
 
             viewModelScope.launch {
                 _uiState.update { it.copy(submitState = SubmitState.InProgress) }
@@ -186,6 +213,9 @@ class DiaryWriteViewModel
                                     // 전체 해제로 읽어, 수신자를 건드리지 않은 편집이 기존 지정을
                                     // 지운다 — 목록 응답에 수신자가 없어 되살릴 수도 없다.
                                     receiverIds = state.selectedReceiverIds.toList().takeIf { it.isNotEmpty() },
+                                    // 화면 값이 서버에서 왔거나 사용자가 고른 것일 때만 싣는다.
+                                    // 그 밖에는 키를 생략해 서버가 기존 기록일을 유지한다 (#1008).
+                                    date = state.date.takeIf { state.isDateChosen },
                                 ),
                         )
                     } else {
@@ -196,6 +226,7 @@ class DiaryWriteViewModel
                                 isDraft = isDraft,
                                 todayMood = mood,
                                 receiverIds = state.selectedReceiverIds.toList(),
+                                date = state.date,
                             ),
                         )
                     }
@@ -284,14 +315,28 @@ class DiaryWriteViewModel
                     ).mapCatching { list -> list.diaries.first { it.diaryId == diaryId } }
                     .onSuccess { draft ->
                         _uiState.update {
+                            // **사용자가 이미 손댄 칸은 덮지 않는다** (#2031). 입력창은 프리필을
+                            // 기다리는 동안에도 편집할 수 있어서, 늦게 도착한 원본을 무조건 실으면
+                            // 방금 친 글이 서버 값으로 되돌아간다. 오늘 초안 이어쓰기(`resumeDraft`)가
+                            // 이미 같은 규칙을 쓰고 있었고, 대상 ID 로 들어온 수정만 빠져 있었다.
+                            //
+                            // 빈 칸 판정은 칸마다 다르다 — 본문은 에디터가 아무것도 안 써도
+                            // `<p></p>` 를 내보내므로 태그를 걷어 낸 [isHtmlBlank] 로 본다.
+                            val prefillDate = draft.toUi()?.date
                             it.copy(
-                                title = draft.title,
-                                content = draft.content,
-                                mood = draft.todayMood,
-                                // 표시 전용 값이다 — 서버가 날짜를 주면 그걸 보여 주고, 안 주면
-                                // 화면에 이미 떠 있던 값을 유지한다. 고르는 수단은 없다 (#1008).
-                                date = draft.toUi()?.date ?: it.date,
+                                title = if (it.title.isBlank()) draft.title else it.title,
+                                content = if (it.content.isHtmlBlank()) draft.content else it.content,
+                                mood = it.mood ?: draft.todayMood,
+                                // 서버가 준 기록일을 그대로 보여 주고, 그때부터 수정 요청에도 싣는다.
+                                // 프리필이 날짜를 못 주면 화면 값(오늘)을 유지하되 `isDateChosen` 은
+                                // false 로 남겨, 수정이 기존 기록일을 오늘로 밀지 않게 한다 (#1008).
+                                // 사용자가 이미 고른 날짜가 있으면 그쪽이 이긴다 (#2031).
+                                date = if (it.isDateChosen) it.date else prefillDate ?: it.date,
+                                isDateChosen = it.isDateChosen || prefillDate != null,
                                 isDraftLoading = false,
+                                // 「프리필이 도착했다」는 사실은 무엇을 실었는지와 무관하게 선다 —
+                                // 저장 잠금(#2027)이 이 값을 보므로, 입력해 둔 사용자가 저장하지
+                                // 못하는 상태로 굳으면 안 된다.
                                 draftLoaded = true,
                             )
                         }

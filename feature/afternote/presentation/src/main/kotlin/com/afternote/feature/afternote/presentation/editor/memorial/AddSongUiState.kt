@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.editor.memorial
 
 import androidx.annotation.StringRes
+import com.afternote.core.ui.mvi.UiState
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 /**
@@ -10,9 +11,9 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
  * 예외 원문·서버 응답 본문 같은 임의 문자열이 화면까지 실려 갈 경로를 타입 차원에서 없앤다 (#664).
  * Composable 측에서 `stringResource` 로 변환.
  */
-data class AddSongUiState(
+internal data class AddSongUiState(
     val songs: List<PlaylistSongDisplay> = emptyList(),
     val searchQuery: String = "",
     val isLoading: Boolean = false,
     @param:StringRes val errorRes: Int? = null,
-)
+) : UiState

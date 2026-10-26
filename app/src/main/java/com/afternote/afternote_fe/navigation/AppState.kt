@@ -1,76 +1,220 @@
 package com.afternote.afternote_fe.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.navigation.NavDestination
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.rememberNavBackStack
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.navigation.model.AfternoteRoute
-import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
+import com.afternote.core.ui.navigation.popUpTo
+import com.afternote.core.ui.navigation.pushSingleTop
 
-// 컴포즈 엔진은 커스텀 클래스에 대해 변경 여부를 확신할 수 없어 리컴포지션 스킵 불가
-// 이 클래스는 상태 변경 시 컴포즈에 알려 줄 것을 보장 매번 다시 그릴 필요 없음
-// 이 어노테이션을 통해 상태 변경을 알려 줄 때가 아니면 리컴포지션하지 않게 함
 @Stable
 class AppState(
-    val navController: NavHostController,
+    private val homeBackStack: NavBackStack<NavKey>,
+    private val mindRecordBackStack: NavBackStack<NavKey>,
+    private val timeLetterBackStack: NavBackStack<NavKey>,
+    private val afternoteBackStack: NavBackStack<NavKey>,
+    private val flowBackStack: NavBackStack<NavKey>,
+    private val activeStackState: MutableState<AppStack>,
+    internal val legacyMindRecordController: NavHostController? = null,
 ) {
-    fun shouldShowBottomBar(currentDestination: NavDestination?): Boolean =
-        bottomBarRoutes.any { route ->
-            currentDestination?.hasRoute(route) == true
+    private var startDestinationInitialized = false
+
+    var activeStack: AppStack by activeStackState
+        private set
+
+    var pendingMindRecordDestination: Any? by mutableStateOf(null)
+        private set
+
+    val backStack: NavBackStack<NavKey>
+        get() =
+            when (activeStack) {
+                AppStack.HOME -> homeBackStack
+                AppStack.RECORD -> mindRecordBackStack
+                AppStack.TIMELETTER -> timeLetterBackStack
+                AppStack.NOTE -> afternoteBackStack
+                AppStack.FLOW -> flowBackStack
+            }
+
+    fun shouldShowBottomBar(
+        isMindRecordAtRoot: Boolean,
+        isTimeLetterAtRoot: Boolean,
+        isAfternoteStackAtRoot: Boolean,
+    ): Boolean =
+        when (activeStack) {
+            AppStack.HOME -> backStack.lastOrNull() == Route.Home
+            AppStack.RECORD -> backStack.lastOrNull() == Route.MindRecord && isMindRecordAtRoot
+            AppStack.TIMELETTER -> backStack.lastOrNull() == Route.TimeLetter && isTimeLetterAtRoot
+            AppStack.NOTE -> backStack.lastOrNull() == Route.Afternote && isAfternoteStackAtRoot
+            AppStack.FLOW -> false
         }
 
-    fun getCurrentNavTab(currentDestination: NavDestination?): BottomNavTab =
-        // 현재 데스티네이션에 대해 탭을 순회하며
-        BottomNavTab.entries.firstOrNull { tab ->
-            // <기본 동작>
-            // 현재 데스티네이션부터 상위 그래프로 거슬러 올라감
-            // 계층 구조 내 현재 탭의 라우트를 가진 노드(데스티네이션)가 있는지 확인
-            // <여기서 쓰는 목적>
-            // 탭의 라우트는 노드 단위인 것도 있지만 서브 그래프 단위인 것도 있음
-            // 현재 화면이 해당 서브 그래프의 자식으로 소속되어 있는지 확인
-            currentDestination?.hierarchy?.any { destination ->
-                destination.hasRoute(tab.route::class)
-            } == true
-        } ?: BottomNavTab.HOME
+    fun getCurrentNavTab(): BottomNavTab =
+        when (activeStack) {
+            AppStack.HOME -> BottomNavTab.HOME
+            AppStack.RECORD -> BottomNavTab.RECORD
+            AppStack.TIMELETTER -> BottomNavTab.TIMELETTER
+            AppStack.NOTE -> BottomNavTab.NOTE
+            AppStack.FLOW -> BottomNavTab.HOME
+        }
 
-    // 바텀바를 보여줄 화면 목록
-    // 여기에 없는 화면(상세, 에디터 등)에서는 바텀바가 숨겨짐
-    private val bottomBarRoutes =
-        setOf(
-            Route.Home::class,
-            Route.MindRecord::class,
-            Route.TimeLetter::class,
-            TimeLetterRoute.TimeLetterHomeRoute::class,
-            Route.Afternote::class,
-            AfternoteRoute.AfternoteHomeRoute::class,
-            AfternoteRoute.FingerprintLoginRoute::class,
-        )
-
-    fun navigateToBottomBarRoute(route: Route) {
-        navController.navigate(route) {
-            // Route.Home은 바텀바가 보이는 모든 시점에서 반드시 백스택에 존재한다.
-            // findStartDestination()을 쓰면 startDestination이 Route.Onboarding일 때
-            // 로그인 이후 백스택에 없는 온보딩 화면을 가리켜 popUpTo가 무시되는 버그가 발생한다.
-            popUpTo<Route.Home> {
-                saveState = true
-                // inclusive = false — Home을 백스택에 유지한다 (기본값이나 의도를 명시)
-            }
-            launchSingleTop = true
-            // 애프터노트 서브그래프의 start는 인증 화면이다. restoreState = true이면
-            // 저장된 홈 등으로 복원되어 인증을 건너뛴다. 진입점은 피처 NavGraph가 단일로 결정한다.
-            restoreState = route != Route.Afternote
+    fun navigate(route: Route) {
+        when (route) {
+            Route.Home, Route.MindRecord, Route.TimeLetter, Route.Afternote -> navigateToBottomBarRoute(route)
+            Route.MemorySpace, Route.ReceiverMindRecord -> navigateToMindRecordDestination(route)
+            else -> backStack.pushSingleTop(route)
         }
     }
+
+    fun navigateToMindRecordDestination(destination: Any) {
+        pendingMindRecordDestination = destination
+        activeStack = AppStack.RECORD
+        mindRecordBackStack.popUpTo(Route.MindRecord)
+    }
+
+    fun consumeMindRecordDestination(destination: Any) {
+        if (pendingMindRecordDestination == destination) pendingMindRecordDestination = null
+    }
+
+    internal fun initializeLegacyStartDestination(route: Route) {
+        if (startDestinationInitialized) return
+        startDestinationInitialized = true
+        when (route) {
+            Route.Home -> {
+                activeStack = AppStack.HOME
+            }
+
+            Route.MindRecord -> {
+                activeStack = AppStack.RECORD
+            }
+
+            Route.TimeLetter -> {
+                activeStack = AppStack.TIMELETTER
+            }
+
+            Route.Afternote -> {
+                activeStack = AppStack.NOTE
+            }
+
+            else -> {
+                flowBackStack.clear()
+                flowBackStack.add(route)
+                activeStack = AppStack.FLOW
+            }
+        }
+    }
+
+    fun navigateToBottomBarRoute(route: Route) {
+        when (route) {
+            Route.Home -> {
+                activeStack = AppStack.HOME
+                homeBackStack.popUpTo(Route.Home)
+            }
+
+            Route.MindRecord -> {
+                activeStack = AppStack.RECORD
+                mindRecordBackStack.popUpTo(Route.MindRecord)
+            }
+
+            Route.TimeLetter -> {
+                activeStack = AppStack.TIMELETTER
+                timeLetterBackStack.popUpTo(Route.TimeLetter)
+            }
+
+            Route.Afternote -> {
+                activeStack = AppStack.NOTE
+                afternoteBackStack.popUpTo(Route.Afternote)
+            }
+
+            else -> {
+                backStack.pushSingleTop(route)
+            }
+        }
+    }
+
+    fun replaceAllWithHome() {
+        homeBackStack.clear()
+        homeBackStack.add(Route.Home)
+        pendingMindRecordDestination = null
+        activeStack = AppStack.HOME
+    }
+
+    fun replaceAllWithOnboarding() {
+        flowBackStack.clear()
+        flowBackStack.add(Route.Onboarding)
+        homeBackStack.clear()
+        homeBackStack.add(Route.Home)
+        mindRecordBackStack.clear()
+        mindRecordBackStack.add(Route.MindRecord)
+        timeLetterBackStack.clear()
+        timeLetterBackStack.add(Route.TimeLetter)
+        afternoteBackStack.clear()
+        afternoteBackStack.add(Route.Afternote)
+        pendingMindRecordDestination = null
+        activeStack = AppStack.FLOW
+    }
+
+    fun exitCurrentEntry(): Boolean {
+        if (backStack.size > 1) {
+            backStack.removeAt(backStack.lastIndex)
+            return true
+        }
+        if (activeStack in setOf(AppStack.RECORD, AppStack.TIMELETTER, AppStack.NOTE)) {
+            navigateToBottomBarRoute(Route.Home)
+            return true
+        }
+        return false
+    }
+
+    companion object {
+        fun initialStack(route: Route): AppStack =
+            when (route) {
+                Route.Home -> AppStack.HOME
+                Route.MindRecord -> AppStack.RECORD
+                Route.TimeLetter -> AppStack.TIMELETTER
+                Route.Afternote -> AppStack.NOTE
+                else -> AppStack.FLOW
+            }
+    }
+
+    internal constructor(navController: NavHostController) :
+        this(
+            homeBackStack = NavBackStack(Route.Home),
+            mindRecordBackStack = NavBackStack(Route.MindRecord),
+            timeLetterBackStack = NavBackStack(Route.TimeLetter),
+            afternoteBackStack = NavBackStack(Route.Afternote),
+            flowBackStack = NavBackStack(Route.Home),
+            activeStackState = mutableStateOf(AppStack.HOME),
+            legacyMindRecordController = navController,
+        )
+}
+
+enum class AppStack {
+    HOME,
+    RECORD,
+    TIMELETTER,
+    NOTE,
+    FLOW,
 }
 
 @Composable
-fun rememberAfternoteAppState(navController: NavHostController = rememberNavController()): AppState =
-    remember(navController) {
-        AppState(navController)
+fun rememberAfternoteAppState(startDestination: Route = Route.Home): AppState {
+    val homeBackStack: NavBackStack<NavKey> = rememberNavBackStack(Route.Home)
+    val mindRecordBackStack: NavBackStack<NavKey> = rememberNavBackStack(Route.MindRecord)
+    val timeLetterBackStack: NavBackStack<NavKey> = rememberNavBackStack(Route.TimeLetter)
+    val afternoteBackStack: NavBackStack<NavKey> = rememberNavBackStack(Route.Afternote)
+    val flowBackStack: NavBackStack<NavKey> = rememberNavBackStack(startDestination)
+    val activeStack = rememberSaveable(startDestination) { mutableStateOf(AppState.initialStack(startDestination)) }
+    return remember(homeBackStack, mindRecordBackStack, timeLetterBackStack, afternoteBackStack, flowBackStack, activeStack) {
+        AppState(homeBackStack, mindRecordBackStack, timeLetterBackStack, afternoteBackStack, flowBackStack, activeStack)
     }
+}

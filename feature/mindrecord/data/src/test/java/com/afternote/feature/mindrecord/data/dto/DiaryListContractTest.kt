@@ -128,9 +128,31 @@ class DiaryListContractTest {
     }
 
     @Test
-    fun `todayMood 가 빠지면 실패한다`() {
-        // 저장 컬럼이 필수라 응답에도 항상 있다. 한글 값이 관측된 쪽은 AI 가 매기는
-        // `emotion` 이지 사용자가 고르는 이 필드가 아니다 (#591, #789).
+    fun `임시저장의 명시적 null 기분은 정상 파싱된다`() {
+        // BE#243(PR #267) 뒤로 임시저장은 `today_mood` 가 NULL 일 수 있다. 필수로 두면
+        // 그런 일기가 하나라도 있는 달의 목록 전체가 파싱 실패로 날아간다 (#1065).
+        val body =
+            """
+            {
+              "status": 200, "code": 200,
+              "data": { "monthDiaryCount": 1, "weeklyDominantMood": null,
+                        "diaries": [{ "diaryId": 1, "title": "쓰다 만 제목", "content": "",
+                        "date": "2026-09-07", "createdAt": "2026-09-07T10:00:00",
+                        "todayMood": null, "isDraft": true, "receivers": [] }] }
+            }
+            """.trimIndent()
+
+        val decoded = json.decodeFromString(BaseResponse.serializer(DiaryListDto.serializer()), body)
+
+        val diary = decoded.data!!.diaries.single()
+        assertNull(diary.todayMood)
+        assertEquals(true, diary.isDraft)
+    }
+
+    @Test
+    fun `todayMood 키 자체가 빠지면 실패한다`() {
+        // 값이 조건부인 것과 키가 사라진 것은 다르다 — 후자는 계약 변경이라 드러나야 한다.
+        // 한글 값이 관측된 쪽은 AI 가 매기는 `emotion` 이지 사용자가 고르는 이 필드가 아니다 (#591, #789).
         val body =
             """
             {

@@ -25,6 +25,10 @@ import java.io.File
  * 잔존이 재현된다. 매니페스트 영속이 그 구멍을 막는 것을 레지스트리 재생성(= 프로세스 재시작
  * 시뮬레이션)으로 검증한다. 실물 파일 DataStore 를 쓰며, 프로세스 종료는 registryScope 취소로
  * 흉내 낸다 (DataStore 의 "파일당 활성 인스턴스 1개" 등록이 scope 종료로 풀린다).
+ *
+ * 매니페스트 기록은 비동기라 종료 전에 디스크까지 내려보내야 한다. 그 flush 는 공개 operation
+ * [LocalStoreRegistry.clearScope] 로 한다 — clearScope 는 계약상 «대기 중인 등록을 먼저 반영한
+ * 뒤» 지우므로, 아직 값을 쓰기 전에 한 번 부르면 등록만 확정되고 지울 것은 없다 (#1672).
  */
 class LocalStoreRegistryImplTest {
     @get:Rule
@@ -84,9 +88,11 @@ class LocalStoreRegistryImplTest {
         try {
             val registry = newRegistry(scope)
 
+            // 레지스트리 자신의 매니페스트 파일 이름. 값은 디스크 계약이라 리터럴로 고정한다 —
+            // 상수를 공유하려고 프로덕션 visibility 를 넓히지 않는다 (#1672).
             val thrown =
                 runCatching {
-                    registry.store(LocalStoreRegistryImpl.MANIFEST_NAME, StoreScope.DEVICE)
+                    registry.store("local_store_registry", StoreScope.DEVICE)
                 }.exceptionOrNull()
 
             assertTrue(thrown is IllegalArgumentException)
@@ -120,9 +126,13 @@ class LocalStoreRegistryImplTest {
         val scope1 = newScope()
         val registry1 = newRegistry(scope1)
         runBlocking {
+            registry1.store("session_store", StoreScope.SESSION)
+            registry1.store("device_store", StoreScope.DEVICE)
+            // 아직 값이 없을 때 부르는 clearScope — 등록만 디스크로 확정시키는 flush 지점이다.
+            registry1.clearScope(StoreScope.SESSION)
+
             registry1.store("session_store", StoreScope.SESSION).edit { it[key] = "잔존 후보" }
             registry1.store("device_store", StoreScope.DEVICE).edit { it[key] = "기기 값" }
-            registry1.awaitPendingRegistrations()
         }
         shutdown(scope1)
 
@@ -148,8 +158,10 @@ class LocalStoreRegistryImplTest {
         val scope1 = newScope()
         val registry1 = newRegistry(scope1)
         runBlocking {
+            registry1.store("session_store", StoreScope.SESSION)
+            registry1.clearScope(StoreScope.SESSION)
+
             registry1.store("session_store", StoreScope.SESSION).edit { it[key] = "값" }
-            registry1.awaitPendingRegistrations()
         }
         shutdown(scope1)
 
