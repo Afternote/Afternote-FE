@@ -24,7 +24,7 @@ import androidx.navigation.testing.TestNavHostController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.afternote.afternote_fe.navigation.AppNavigation
-import com.afternote.afternote_fe.navigation.AppState
+import com.afternote.afternote_fe.navigation.rememberAfternoteAppState
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.testing.FakeUserRepository
@@ -118,7 +118,7 @@ class ReceiverSelectionResultAndroidTest {
                 AfternoteTheme {
                     AppNavigation(
                         startDestination = Route.Afternote,
-                        appState = AppState(navController),
+                        appState = rememberAfternoteAppState(Route.Afternote),
                     )
                 }
             }

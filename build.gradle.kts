@@ -133,7 +133,7 @@ val securityFloors =
             SecurityFloor(
                 module = "org.jsoup:jsoup",
                 version = libs.versions.jsoup.get(),
-                because = "GHSA-pmhh-3w7g-xqp8·GHSA-gp7f-rwcx-9369: 접근성 테스트의 1.15.1 취약, #2219",
+                because = "GHSA-pmhh-3w7g-xqp8·GHSA-gp7f-rwcx-9369·GHSA-65r4-943x-97jj: jsoup 1.23.1 미만 취약, #2219·#2302",
             ),
         ) +
         // baselineprofile 테스트 모듈의 디코더만 올린다. constraint 는 새 런타임 의존성을 추가하지 않는다.

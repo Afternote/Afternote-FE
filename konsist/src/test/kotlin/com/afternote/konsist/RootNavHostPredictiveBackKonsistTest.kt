@@ -4,20 +4,18 @@ import com.lemonappdev.konsist.api.declaration.KoFileDeclaration
 import org.junit.Test
 
 /**
- * 루트 `NavHost` 의 predictive back pop 전환 결선 가드 (#1869).
+ * 루트 `FeatureNavDisplay` 의 predictive back pop 전환 결선 가드 (#1869, #1702).
  *
- * 이 저장소는 네비게이션 엔진을 둘 쓴다. Nav3 로컬 스택은 `predictivePopTransitionSpec` 을 안 넘겨도
- * 라이브러리 기본값이 앞 화면을 줄여 주지만, **Nav2 루트 `NavHost` 의 pop 기본값은 fade 라 앞 화면이
- * 제자리에서 흐려지기만 한다** — 그래서 진행 중 두 화면이 같은 크기로 겹쳐 보였다(#1869 실기기 재현).
+ * Navigation 3 기본값과 #1869 공용 전환은 같은 모양이지만, 루트도 공용 전환을 명시적으로 전달해
+ * 로컬 스택과 단일 출처를 유지한다.
  *
  * 어긋난 축이 「화면이 어떻게 보이는가」 하나라서 기존 자동 검사가 전부 지나간다.
  * `PredictiveBackNavigationTest`(5건)는 백스택 상태만 보고, Robolectric 은 프레임을 돌리지 않는다.
- * `popEnterTransition`·`popExitTransition` 두 인자는 **기본값이 있어 지워도 컴파일이 통과하고**,
- * 그대로 #1869 이전 상태로 되돌아간다. 그 되돌림을 소스에서 본다.
+ * `predictivePopTransitionSpec` 은 기본값이 있어 지워도 컴파일이 통과한다. 그 되돌림을 소스에서 본다.
  *
  * ### 이 가드가 잡는 것과 못 잡는 것
  *
- * 잡는 것 — 두 인자 중 하나라도 사라지는 것, 다른 값으로 갈아 끼우는 것, core/ui 의 공용 상수를
+ * 잡는 것 — 공용 전환 둘 중 하나라도 사라지는 것, 다른 값으로 갈아 끼우는 것, core/ui 의 공용 상수를
  * 두고 app 안에서 따로 정의한 값을 넘기는 것(import 까지 본다), 그리고 core/ui 쪽 상수가
  * 이름을 바꾸거나 사라지는 것.
  *
@@ -29,47 +27,40 @@ import org.junit.Test
  */
 class RootNavHostPredictiveBackKonsistTest {
     @Test
-    fun `루트 NavHost 는 core ui 의 predictive back pop 전환을 넘긴다`() {
+    fun `루트 FeatureNavDisplay 는 core ui 의 predictive back pop 전환을 넘긴다`() {
         // 공유 진입점을 쓴다 — 워크트리 사본이 섞이면 남의 브랜치 소스로 헛짚는다 (#1659, ScanScopeKonsistTest).
         val source = singleFile(APP_NAVIGATION_PATH).text
-        val arguments = rootNavHostArguments(source)
+        val arguments = rootNavDisplayArguments(source)
 
         check(arguments != null) {
-            "$APP_NAVIGATION_PATH 에서 루트 «NavHost(» 호출을 찾지 못했다 — 루트가 NavDisplay 로 바뀌었다면(#1702) " +
-                "이 가드를 predictivePopTransitionSpec 기준으로 옮긴다."
+            "$APP_NAVIGATION_PATH 에서 루트 «FeatureNavDisplay(» 호출을 찾지 못했다."
         }
 
-        EXPECTED_BINDINGS.forEach { (parameter, constant) ->
-            val binding =
-                Regex("""$parameter\s*=\s*([^,\n]+)""")
-                    .find(arguments)
-                    ?.groupValues
-                    ?.get(1)
-                    ?.trim()
-
-            check(binding != null) {
-                "루트 NavHost 에 $parameter 인자가 없다 (#1869).\n" +
-                    "기본값은 fade 라, 지우면 predictive back 진행 중 앞 화면이 줄지 않고 뒤 화면과 겹쳐 그려진다.\n" +
-                    "  $parameter = { $constant },"
-            }
+        val binding = Regex("""(?s)predictivePopTransitionSpec\s*=\s*(\{[^}]*})""").find(arguments)?.groupValues?.get(1)
+        check(binding != null) { "루트 FeatureNavDisplay 에 predictivePopTransitionSpec 인자가 없다 (#1869)." }
+        EXPECTED_BINDINGS.forEach { constant ->
             check(binding.references(constant)) {
-                "루트 NavHost 의 $parameter 가 «$constant» 이 아니라 «$binding» 을 넘긴다 (#1869)."
+                "루트 FeatureNavDisplay 의 predictivePopTransitionSpec 에 «$constant» 가 없다 (#1869)."
             }
             // 같은 이름을 app 안에서 새로 정의해도 위 단언은 통과한다 — 출처가 core/ui 인지 import 로 본다.
             check(source.contains("import $CONSTANT_PACKAGE.$constant")) {
                 "$APP_NAVIGATION_PATH 가 $CONSTANT_PACKAGE.$constant 을 import 하지 않는다 — " +
-                    "두 엔진이 같은 값을 쓰도록 상수는 core/ui 한 곳에 둔다 (#1869)."
+                    "루트와 로컬이 같은 값을 쓰도록 상수는 core/ui 한 곳에 둔다 (#1869)."
             }
+        }
+        val featureDisplay = singleFile(FEATURE_NAV_DISPLAY_PATH).text
+        check(Regex("""predictivePopTransitionSpec\s*=\s*predictivePopTransitionSpec""").containsMatchIn(featureDisplay)) {
+            "FeatureNavDisplay 가 predictivePopTransitionSpec 을 NavDisplay 에 전달하지 않는다 (#1869)."
         }
     }
 
     @Test
     fun `predictive back pop 전환은 core ui 가 소유한다`() {
         val declared = singleFile(TRANSITIONS_PATH).properties().map { it.name }.toSet()
-        val missing = EXPECTED_BINDINGS.values.filterNot(declared::contains)
+        val missing = EXPECTED_BINDINGS.filterNot(declared::contains)
 
         check(missing.isEmpty()) {
-            "$TRANSITIONS_PATH 에 ${missing.joinToString()} 이 없다 — 루트 NavHost 와 #1702 의 NavDisplay 가 " +
+            "$TRANSITIONS_PATH 에 ${missing.joinToString()} 이 없다 — 루트와 로컬 NavDisplay 가 " +
                 "같은 값을 넘기려면 이 파일이 단일 출처여야 한다 (#1869)."
         }
     }
@@ -91,7 +82,7 @@ class RootNavHostPredictiveBackKonsistTest {
      * 이름은 식별자 경계로 찾는다 — 같은 파일에 `AfternoteNavHost(`·`ReceiverNavHost(` 처럼 끝이
      * 겹치는 호출이 여럿이라, 단순 `indexOf` 는 그중 무엇이 먼저 오느냐에 결과가 달라진다.
      */
-    private fun rootNavHostArguments(source: String): String? {
+    private fun rootNavDisplayArguments(source: String): String? {
         val open = NAV_HOST_CALL.find(source)?.range?.last ?: return null
         var depth = 0
         for (index in open until source.length) {
@@ -120,16 +111,13 @@ class RootNavHostPredictiveBackKonsistTest {
         const val APP_NAVIGATION_PATH = "app/src/main/java/com/afternote/afternote_fe/navigation/AppNavigation.kt"
         const val TRANSITIONS_PATH =
             "core/ui/src/main/kotlin/com/afternote/core/ui/navigation/PredictiveBackTransitions.kt"
+        const val FEATURE_NAV_DISPLAY_PATH = "core/ui/src/main/kotlin/com/afternote/core/ui/navigation/FeatureNavDisplay.kt"
         const val CONSTANT_PACKAGE = "com.afternote.core.ui.navigation"
 
-        /** 루트 `NavHost(` — `AfternoteNavHost(` 처럼 끝만 겹치는 호출을 배제한다. */
-        val NAV_HOST_CALL = Regex("""(?<![A-Za-z0-9_])NavHost\(""")
+        /** 루트 `FeatureNavDisplay(` — `AfternoteNavHost(` 처럼 이름 끝만 겹치는 호출을 배제한다. */
+        val NAV_HOST_CALL = Regex("""(?<![A-Za-z0-9_])FeatureNavDisplay\(""")
 
-        /** 루트 `NavHost` 인자 → 넘어가야 하는 core/ui 상수. */
-        val EXPECTED_BINDINGS =
-            mapOf(
-                "popEnterTransition" to "PredictiveBackPopEnter",
-                "popExitTransition" to "PredictiveBackPopExit",
-            )
+        /** 루트 `FeatureNavDisplay` 가 넘기는 core/ui 상수. */
+        val EXPECTED_BINDINGS = listOf("PredictiveBackPopEnter", "PredictiveBackPopExit")
     }
 }

@@ -1,5 +1,7 @@
 package com.afternote.core.ui.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ContentTransform
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -12,7 +14,9 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.scene.Scene
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.defaultPredictivePopTransitionSpec
 
 /**
  * 피처 하나가 소유하는 로컬 Navigation 3 스택의 표준 표시부.
@@ -40,6 +44,8 @@ import androidx.navigation3.ui.NavDisplay
  * `FeatureNavDisplayTest` 의 「back 은 스택만 줄이고 바닥에서는 이 표시부를 지나쳐 위로 흐른다」가
  * 이 갈림을 잠근다.
  *
+ * `predictivePopTransitionSpec` 은 Navigation 3 기본값이며, 루트는 #1702 이관 중 공용 전환을 지정한다.
+ *
  * #1996: 온보딩의 named argument 호환을 위해 `boundary` 이름을 소비처 전환까지 유지한다.
  */
 @Composable
@@ -47,6 +53,8 @@ public fun FeatureNavDisplay(
     backStack: NavBackStack<NavKey>,
     boundary: FeatureNavigationCallbacks,
     modifier: Modifier = Modifier,
+    predictivePopTransitionSpec: AnimatedContentTransitionScope<Scene<NavKey>>.(Int) -> ContentTransform =
+        defaultPredictivePopTransitionSpec(),
     entryProvider: (NavKey) -> NavEntry<NavKey>,
 ) {
     val currentNavigationCallbacks by rememberUpdatedState(boundary)
@@ -69,6 +77,7 @@ public fun FeatureNavDisplay(
                 currentNavigationCallbacks.exit()
             }
         },
+        predictivePopTransitionSpec = predictivePopTransitionSpec,
         entryDecorators = rememberStandardNavEntryDecorators(),
         entryProvider = entryProvider,
     )

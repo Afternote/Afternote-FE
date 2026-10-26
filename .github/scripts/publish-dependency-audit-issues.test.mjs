@@ -210,7 +210,7 @@ async function publish(finding, issues, commentsByNumber) {
         findings: [finding],
         token: "test-token",
         repository: "Afternote/Afternote-FE",
-        assignee: "1hyok",
+        assignee: "OnlyReadOneBook",
         api,
     });
     return { actions: results.map((item) => item.action), calls };

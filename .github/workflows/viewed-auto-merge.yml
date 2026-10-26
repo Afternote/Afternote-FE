@@ -11,7 +11,7 @@
 # Viewed 체크는 webhook 이벤트가 없어 주기 실행으로 훑는다. viewerViewedState 는 토큰 주인 본인 것만 보이므로 VIEWED_BY 의 읽기 전용 토큰을 VIEWED_TOKEN
 # 시크릿으로 둔다. 시크릿이 없으면 아무것도 하지 않는다.
 #
-# 예약 쓰기는 MERGE_QUEUE_TOKEN(1hyok 의 fine-grained PAT)이 한다. GITHUB_TOKEN 으로 예약하거나 큐에 넣으면 GitHub 이
+# 예약 쓰기는 MERGE_QUEUE_TOKEN(OnlyReadOneBook 의 fine-grained PAT)이 한다. GITHUB_TOKEN 으로 예약하거나 큐에 넣으면 GitHub 이
 # 그 이벤트로 워크플로를 띄우지 않아 merge_group CI 가 하나도 돌지 않는다. 큐는 check timeout(60분)까지 맨 앞을 붙잡았다가
 # CI_TIMEOUT 으로 빼고, 뒤에 쌓인 PR 들도 다시 검증한다(1005 #2208 실측). 시크릿이 없으면 예약하지 않는다.
 name: Viewed Auto Merge
@@ -47,7 +47,7 @@ jobs:
         id: find
         env:
           VIEWED_TOKEN: ${{ secrets.VIEWED_TOKEN }}
-          VIEWED_BY: 1hyok
+          VIEWED_BY: OnlyReadOneBook
           BASE_BRANCH: ${{ github.event.repository.default_branch }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_API_URL: ${{ github.api_url }}

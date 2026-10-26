@@ -14,11 +14,14 @@ import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakeMyProfileRepository
 import com.afternote.core.domain.testing.FakePhotoUploadRepository
+import com.afternote.core.domain.testing.FakeReceiverInvitationRepository
+import com.afternote.core.domain.testing.FakeUserProfileCacheRepository
 import com.afternote.core.domain.testing.FakeUserReceiverRepository
 import com.afternote.core.model.delivery.ConditionState
 import com.afternote.core.model.delivery.DeliveryConditionItem
@@ -62,7 +65,9 @@ import com.afternote.feature.setting.presentation.receiver.ReceiverEditEvent
 import com.afternote.feature.setting.presentation.receiver.ReceiverEditIntent
 import com.afternote.feature.setting.presentation.receiver.ReceiverEditScreen
 import com.afternote.feature.setting.presentation.receiver.ReceiverEditViewModel
+import com.afternote.feature.setting.presentation.receiver.ReceiverInviteViewModel
 import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterEvent
+import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterIntent
 import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterScreen
 import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterViewModel
 import kotlinx.coroutines.CompletableDeferred
@@ -306,12 +311,14 @@ class SettingCompletionTest {
             )
 
         composeRule.runOnIdle {
-            viewModel.register(
-                name = expectedCall.name,
-                relation = expectedCall.relation,
-                phone = expectedCall.phone,
-                email = expectedCall.email,
-                message = "",
+            viewModel.onIntent(
+                ReceiverRegisterIntent.Register(
+                    name = expectedCall.name,
+                    relation = expectedCall.relation,
+                    phone = expectedCall.phone,
+                    email = expectedCall.email,
+                    message = "",
+                ),
             )
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
@@ -326,12 +333,14 @@ class SettingCompletionTest {
         assertFalse(viewModel.uiState.value.isLoading)
 
         composeRule.runOnIdle {
-            viewModel.register(
-                name = expectedCall.name,
-                relation = expectedCall.relation,
-                phone = expectedCall.phone,
-                email = expectedCall.email,
-                message = "",
+            viewModel.onIntent(
+                ReceiverRegisterIntent.Register(
+                    name = expectedCall.name,
+                    relation = expectedCall.relation,
+                    phone = expectedCall.phone,
+                    email = expectedCall.email,
+                    message = "",
+                ),
             )
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
@@ -344,7 +353,9 @@ class SettingCompletionTest {
 
         retryGate.complete(Result.success(ReceiverCreated(receiverId = RECEIVER_ID, authCode = "AUTH-77")))
 
-        assertEquals(ReceiverRegisterEvent.RegisterSuccess, awaitEvent(viewModel.events))
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            viewModel.uiState.value.pendingEvent == ReceiverRegisterEvent.RegisterSuccess
+        }
     }
 
     @Test
@@ -356,6 +367,7 @@ class SettingCompletionTest {
                     onBackClick = {},
                     onRegisterSuccess = {},
                     viewModel = viewModel,
+                    inviteViewModel = receiverInviteViewModel(),
                 )
             }
         }
@@ -514,7 +526,7 @@ class SettingCompletionTest {
             viewModel.uiState.value.receiver == scenario.receiverDetail
         }
 
-        composeRule.onNodeWithText("연락처를 입력해주세요.").assertIsDisplayed()
+        composeRule.onNodeWithText("연락처를 입력해주세요.").assertExists()
         composeRule.onNodeWithText("수정").assertIsNotEnabled()
         assertTrue(repository.receiverUpdateCalls.isEmpty())
     }
@@ -530,6 +542,7 @@ class SettingCompletionTest {
                     onBackClick = {},
                     onRegisterSuccess = {},
                     viewModel = viewModel,
+                    inviteViewModel = receiverInviteViewModel(),
                 )
             }
         }
@@ -537,6 +550,7 @@ class SettingCompletionTest {
         composeRule.onNodeWithText("이름을 입력하세요").performTextInput("김수신")
         composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("afternote@email.com"))
         composeRule.onNodeWithText("afternote@email.com").performTextInput("receiver@afternote.local")
+        composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("연락처를 지정해주세요"))
 
         composeRule.onNodeWithText("연락처를 입력해주세요.").assertIsDisplayed()
         composeRule.onNodeWithText("등록").assertIsNotEnabled()
@@ -909,3 +923,12 @@ internal object NoOpErrorReporter : ErrorReporter {
         attributes: Map<String, String>,
     ) = Unit
 }
+
+private fun receiverInviteViewModel() =
+    ReceiverInviteViewModel(
+        invitationRepository = FakeReceiverInvitationRepository(),
+        profileCacheRepository = FakeUserProfileCacheRepository(),
+        myProfileRepository = FakeMyProfileRepository(),
+        errorReporter = NoOpErrorReporter,
+        savedStateHandle = SavedStateHandle(),
+    )

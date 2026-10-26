@@ -47,6 +47,7 @@ import com.afternote.feature.setting.presentation.profile.ProfileEditIntent
 import com.afternote.feature.setting.presentation.profile.ProfileEditScreen
 import com.afternote.feature.setting.presentation.profile.ProfileEditUiState
 import com.afternote.feature.setting.presentation.profile.ProfileEditViewModel
+import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterIntent
 import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -166,12 +167,14 @@ class SettingAccountSecurityTest {
         val viewModel = ReceiverRegisterViewModel(repository)
 
         composeRule.runOnIdle {
-            viewModel.register(
-                name = "김수신",
-                relation = "가족",
-                phone = "   ",
-                email = "",
-                message = null,
+            viewModel.onIntent(
+                ReceiverRegisterIntent.Register(
+                    name = "김수신",
+                    relation = "가족",
+                    phone = "   ",
+                    email = "",
+                    message = null,
+                ),
             )
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
@@ -279,7 +282,7 @@ class SettingAccountSecurityTest {
                             isLoading = false,
                             errorMessage = null,
                             onBackClick = {},
-                            onRegisterClick = {},
+                            onRegisterClick = { registerCalls += 1 },
                             onRetryClick = {},
                         )
                     }
@@ -307,6 +310,8 @@ class SettingAccountSecurityTest {
         composeRule.onNodeWithText("패스키 목록").assertIsDisplayed()
         composeRule.onNodeWithText("서버 패스키").assertIsDisplayed()
         composeRule.onNodeWithText("2026.09.06 10:00").assertIsDisplayed()
+        composeRule.onNodeWithText("패스키 생성").assertIsDisplayed().performClick()
+        assertEquals(2, registerCalls)
     }
 
     @Test

@@ -37,7 +37,7 @@ class ReceiverRegisterViewModelTest {
     fun `invalid email is rejected before repository call`() {
         val viewModel = ReceiverRegisterViewModel(repository())
 
-        viewModel.register("홍길동", "딸", "01012345678", "invalid", null)
+        viewModel.onIntent(ReceiverRegisterIntent.Register("홍길동", "딸", "01012345678", "invalid", null))
 
         assertEquals(UiText.Resource(R.string.setting_receiver_email_invalid), viewModel.uiState.value.errorMessage)
         assertEquals(0, createCalls.get())
@@ -48,7 +48,7 @@ class ReceiverRegisterViewModelTest {
     fun `blank email is rejected as required before repository call`() {
         val viewModel = ReceiverRegisterViewModel(repository())
 
-        viewModel.register("홍길동", "딸", null, "", null)
+        viewModel.onIntent(ReceiverRegisterIntent.Register("홍길동", "딸", null, "", null))
 
         assertEquals(UiText.Resource(R.string.setting_receiver_email_required), viewModel.uiState.value.errorMessage)
         assertEquals(0, createCalls.get())
@@ -59,7 +59,7 @@ class ReceiverRegisterViewModelTest {
     fun `blank phone is rejected as required before repository call`() {
         val viewModel = ReceiverRegisterViewModel(repository())
 
-        viewModel.register("홍길동", "딸", null, "receiver@example.com", null)
+        viewModel.onIntent(ReceiverRegisterIntent.Register("홍길동", "딸", null, "receiver@example.com", null))
 
         assertEquals(UiText.Resource(R.string.setting_receiver_phone_required), viewModel.uiState.value.errorMessage)
         assertEquals(0, createCalls.get())
@@ -70,7 +70,7 @@ class ReceiverRegisterViewModelTest {
     fun `invalid phone is rejected before repository call`() {
         val viewModel = ReceiverRegisterViewModel(repository())
 
-        viewModel.register("홍길동", "딸", "123", "receiver@example.com", null)
+        viewModel.onIntent(ReceiverRegisterIntent.Register("홍길동", "딸", "123", "receiver@example.com", null))
 
         assertEquals(UiText.Resource(R.string.setting_receiver_phone_invalid), viewModel.uiState.value.errorMessage)
         assertEquals(0, createCalls.get())
@@ -92,10 +92,21 @@ class ReceiverRegisterViewModelTest {
     fun `unexpected failure uses safe resource message`() {
         val viewModel = ReceiverRegisterViewModel(repository(failure = Exception("internal details")))
 
-        viewModel.register("홍길동", "딸", "01012345678", "receiver@example.com", null)
+        viewModel.onIntent(ReceiverRegisterIntent.Register("홍길동", "딸", "01012345678", "receiver@example.com", null))
 
         assertEquals(UiText.Resource(R.string.setting_receiver_register_failed), viewModel.uiState.value.errorMessage)
         assertFalse(viewModel.uiState.value.isLoading)
+    }
+
+    @Test
+    fun `register success is a state signal and consumes only the same signal`() {
+        val viewModel = ReceiverRegisterViewModel(repository())
+
+        viewModel.onIntent(ReceiverRegisterIntent.Register("홍길동", "딸", "01012345678", "receiver@example.com", null))
+
+        assertEquals(ReceiverRegisterEvent.RegisterSuccess, viewModel.uiState.value.pendingEvent)
+        viewModel.onIntent(ReceiverRegisterIntent.ConsumeEvent(ReceiverRegisterEvent.RegisterSuccess))
+        assertEquals(null, viewModel.uiState.value.pendingEvent)
     }
 
     private fun repository(failure: Throwable? = null): UserReceiverRepository =
