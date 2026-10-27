@@ -28,6 +28,12 @@ internal interface SettingNavActions {
 
     fun onPushNotificationClick()
 
+    fun onNotificationPreferenceClick()
+
+    fun onDelegateClick()
+
+    fun onAnniversaryClick()
+
     fun onRecipientListClick()
 
     fun onDeliveryConditionsClick()

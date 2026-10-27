@@ -4,7 +4,6 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.network.dto.DeletePushTokenRequestDto
-import com.afternote.core.network.dto.NotificationTargetDto
 import com.afternote.core.network.dto.PushInstallationDto
 import com.afternote.core.network.dto.PushInstallationRequestDto
 import com.afternote.core.network.dto.PushTokenDto
@@ -258,10 +257,6 @@ private class MutableReceiverApiService(
     override suspend fun deletePushToken(request: DeletePushTokenRequestDto): BaseResponse<Unit> = TODO("이 테스트 미사용")
 
     override suspend fun reportPushInstallation(request: PushInstallationRequestDto): BaseResponse<PushInstallationDto> = TODO("이 테스트 미사용")
-
-    override suspend fun getNotificationTarget(notificationId: Long): BaseResponse<NotificationTargetDto> = TODO("이 테스트 미사용")
-
-    override suspend fun markNotificationRead(notificationId: Long): BaseResponse<Unit> = TODO("이 테스트 미사용")
 
     override suspend fun getMyPushSettings(): BaseResponse<UserPushSettingDto> = TODO("이 테스트 미사용")
 

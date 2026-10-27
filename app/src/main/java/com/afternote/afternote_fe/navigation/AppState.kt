@@ -35,6 +35,10 @@ class AppState(
     var pendingMindRecordDestination: Any? by mutableStateOf(null)
         private set
 
+    /** 타임레터 탭 NavHost 가 붙은 뒤 탭 홈 위에 차례로 쌓을 화면들 (#2321). */
+    var pendingTimeLetterDestinations: List<Any>? by mutableStateOf(null)
+        private set
+
     val backStack: NavBackStack<NavKey>
         get() =
             when (activeStack) {
@@ -83,6 +87,20 @@ class AppState(
 
     fun consumeMindRecordDestination(destination: Any) {
         if (pendingMindRecordDestination == destination) pendingMindRecordDestination = null
+    }
+
+    /**
+     * 타임레터 탭으로 옮기고 탭 홈 위에 [destinations] 를 쌓게 한다. 탭 NavHost 는 탭이 보일 때 붙으므로
+     * 실제 이동은 앱 셸이 컨트롤러를 얻은 뒤 한다 — 마음의 기록 탭과 같은 방식이다.
+     */
+    fun navigateToTimeLetterDestinations(destinations: List<Any>) {
+        pendingTimeLetterDestinations = destinations
+        activeStack = AppStack.TIMELETTER
+        timeLetterBackStack.popUpTo(Route.TimeLetter)
+    }
+
+    fun consumeTimeLetterDestinations(destinations: List<Any>) {
+        if (pendingTimeLetterDestinations == destinations) pendingTimeLetterDestinations = null
     }
 
     internal fun initializeLegacyStartDestination(route: Route) {
@@ -145,6 +163,7 @@ class AppState(
         homeBackStack.clear()
         homeBackStack.add(Route.Home)
         pendingMindRecordDestination = null
+        pendingTimeLetterDestinations = null
         activeStack = AppStack.HOME
     }
 
@@ -160,6 +179,7 @@ class AppState(
         afternoteBackStack.clear()
         afternoteBackStack.add(Route.Afternote)
         pendingMindRecordDestination = null
+        pendingTimeLetterDestinations = null
         activeStack = AppStack.FLOW
     }
 

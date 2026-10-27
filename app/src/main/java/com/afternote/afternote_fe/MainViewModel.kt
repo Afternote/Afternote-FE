@@ -5,9 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.afternote_fe.notification.NotificationEntryRequest
 import com.afternote.afternote_fe.notification.NotificationEntryResolution
+import com.afternote.afternote_fe.notification.NotificationNavigation
 import com.afternote.afternote_fe.notification.ServerNotificationDestination
 import com.afternote.core.domain.repository.PendingReceiverInvitationStore
 import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.core.domain.repository.notification.NotificationEntry
 import com.afternote.core.domain.repository.notification.NotificationRepository
 import com.afternote.core.ui.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,6 +18,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -32,6 +35,14 @@ class MainViewModel
         private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
         private val pendingNotificationEntryState = MutableStateFlow<NotificationEntryRequest?>(null)
+
+        private val entryNoticeState = MutableStateFlow<NotificationEntry?>(null)
+
+        /**
+         * 앱 진입 보고가 돌려준, 사용자에게 보여 줄 것(쉬운 질문·절차 취소 안내). 보여 줄 게 없으면 null.
+         * 앱 셸이 보여 주고 [consumeEntryNotice] 로 비운다.
+         */
+        internal val entryNotice: StateFlow<NotificationEntry?> = entryNoticeState.asStateFlow()
 
         /** 아직 후속 목적지 adapter가 소비하지 않은 최신 알림 진입 이벤트. */
         internal val pendingNotificationEntry: StateFlow<NotificationEntryRequest?> =
@@ -99,6 +110,37 @@ class MainViewModel
                 initialValue = null,
             )
 
+        init {
+            reportEntryOnLogin(authRepository)
+        }
+
+        /**
+         * 로그인이 확정될 때마다(이미 로그인된 채 켜진 경우 포함) 서버에 앱 진입을 한 번 알린다 (#2321).
+         *
+         * 이 ViewModel 은 Activity 재생성을 넘어 살아남으므로 회전마다 다시 보내지 않는다. 서버는 이걸로
+         * 활동 시각을 갱신해 오래 비운 사용자의 보관 확인 절차를 취소하므로, 실패해도 다음 실행에 다시
+         * 보낼 뿐 화면을 막지 않는다.
+         */
+        private fun reportEntryOnLogin(authRepository: AuthRepository) {
+            viewModelScope.launch {
+                authRepository.isLoggedIn.distinctUntilChanged().collect { loggedIn ->
+                    if (!loggedIn) {
+                        entryNoticeState.value = null
+                        return@collect
+                    }
+                    notificationRepository
+                        .reportEntry()
+                        .onSuccess { entry ->
+                            if (entry.easyQuestions.isNotEmpty() || entry.procedureCancelled) entryNoticeState.value = entry
+                        }
+                }
+            }
+        }
+
+        internal fun consumeEntryNotice() {
+            entryNoticeState.value = null
+        }
+
         /** 스킴 Intent 에서 뽑은 토큰을 보관한다. 같은 Intent 가 재생성으로 다시 와도 같은 값이라 무해하다. */
         internal fun enqueueInvitationToken(token: String) {
             viewModelScope.launch { pendingInvitationStore.save(token) }
@@ -143,7 +185,15 @@ class MainViewModel
          * 데도 안 가는 편이 더 나쁘다. 읽음 처리는 이동을 기다리게 하지 않는다.
          */
         internal suspend fun resolveNotificationEntry(request: NotificationEntryRequest): NotificationEntryResolution {
-            val fallback = NotificationEntryResolution(destination = request.destination)
+            val fallback =
+                NotificationEntryResolution(
+                    navigation =
+                        if (request.serverData.isEmpty()) {
+                            NotificationNavigation.Tab(request.destination)
+                        } else {
+                            ServerNotificationDestination.resolve(request.serverData)
+                        },
+                )
             val notificationId = request.serverNotificationId ?: return fallback
 
             viewModelScope.launch { notificationRepository.markRead(notificationId) }
@@ -153,7 +203,7 @@ class MainViewModel
                 } ?: return fallback
 
             return NotificationEntryResolution(
-                destination = ServerNotificationDestination.toAppDestination(target.destination),
+                navigation = ServerNotificationDestination.resolve(target.data),
                 deleted = target.deleted,
                 serverMessage = target.toast,
             )

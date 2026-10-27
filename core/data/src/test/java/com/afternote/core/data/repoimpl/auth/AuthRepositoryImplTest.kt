@@ -9,6 +9,7 @@ import com.afternote.core.datastore.TokenDataSource
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.push.DevicePushTargetProvider
 import com.afternote.core.domain.push.PushPermission
+import com.afternote.core.domain.push.PushRegistration
 import com.afternote.core.domain.repository.push.PushTargetRepository
 import com.afternote.core.network.dto.LoginDto
 import com.afternote.core.network.dto.LoginRequestDto
@@ -566,12 +567,16 @@ private class RecordingDevicePushTargetProvider(
         existingTargetIdCalls++
         return targetId
     }
+
+    override suspend fun resetTargetId(): String? = error("resetTargetId 는 이 테스트에서 호출되면 안 됨")
 }
 
 private class ThrowingDevicePushTargetProvider : DevicePushTargetProvider {
     override suspend fun currentTargetId(): String? = throw IllegalStateException("API disabled")
 
     override suspend fun existingTargetId(): String? = throw IllegalStateException("API disabled")
+
+    override suspend fun resetTargetId(): String? = error("resetTargetId 는 이 테스트에서 호출되면 안 됨")
 }
 
 private class FakePushTargetRepository(
@@ -584,7 +589,8 @@ private class FakePushTargetRepository(
         targetId: String,
         installationId: String,
         permission: PushPermission,
-    ): Result<Unit> = if (failing) Result.failure(IllegalStateException("등록 실패")) else Result.success(Unit)
+    ): Result<PushRegistration> =
+        if (failing) Result.failure(IllegalStateException("등록 실패")) else Result.success(PushRegistration(requiresReset = false))
 
     override suspend fun unregister(targetId: String): Result<Unit> {
         unregistered += targetId

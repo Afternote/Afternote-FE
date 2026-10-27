@@ -1,7 +1,6 @@
 package com.afternote.core.network.service
 
 import com.afternote.core.network.dto.DeletePushTokenRequestDto
-import com.afternote.core.network.dto.NotificationTargetDto
 import com.afternote.core.network.dto.PushInstallationDto
 import com.afternote.core.network.dto.PushInstallationRequestDto
 import com.afternote.core.network.dto.PushTokenDto
@@ -109,18 +108,6 @@ interface UserApiService {
     suspend fun reportPushInstallation(
         @Body request: PushInstallationRequestDto,
     ): BaseResponse<PushInstallationDto>
-
-    /** 알림을 탭한 시점의 현재 목적지 (#2321). 지워진 대상이면 목록과 안내 문구를 준다. */
-    @GET("users/notifications/{id}/target")
-    suspend fun getNotificationTarget(
-        @Path("id") notificationId: Long,
-    ): BaseResponse<NotificationTargetDto>
-
-    /** 본인 알림 읽음 처리 (#2321). */
-    @PATCH("users/notifications/{id}/read")
-    suspend fun markNotificationRead(
-        @Path("id") notificationId: Long,
-    ): BaseResponse<Unit>
 
     // 푸시 알림 설정 조회
     @GET("users/push-settings")

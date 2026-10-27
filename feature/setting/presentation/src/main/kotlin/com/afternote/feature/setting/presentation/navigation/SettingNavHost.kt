@@ -12,6 +12,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import com.afternote.core.ui.SettingStart
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.navigation.FeatureNavDisplay
 import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
@@ -27,6 +28,9 @@ import com.afternote.feature.setting.presentation.home.WithdrawGuideScreen
 import com.afternote.feature.setting.presentation.notice.NoticeListScreen
 import com.afternote.feature.setting.presentation.notification.NotificationSettingScreen
 import com.afternote.feature.setting.presentation.notification.PushNotificationScreen
+import com.afternote.feature.setting.presentation.notification.anniversary.AnniversaryScreen
+import com.afternote.feature.setting.presentation.notification.delegate.DelegateScreen
+import com.afternote.feature.setting.presentation.notification.preference.NotificationPreferenceScreen
 import com.afternote.feature.setting.presentation.passkey.PassKeyListIntent
 import com.afternote.feature.setting.presentation.passkey.PassKeyListScreen
 import com.afternote.feature.setting.presentation.passkey.PassKeyListViewModel
@@ -55,9 +59,10 @@ import com.afternote.feature.setting.presentation.receiver.ReceiverRegisterScree
  *
  * ## 시작점
  *
- * 홈의 «수신인 지정 미완료» 칩은 설정 홈을 거치지 않고 등록 화면으로 곧장 들어온다
- * ([startWithRecipientRegistration]). 등록 화면을 스택 바닥에 두면 등록 성공의 pop 이 곧 host 이탈이라,
- * 이관 전처럼 부른 곳(홈)으로 돌아간다. 설정 홈·목록에서 들어온 등록은 그 위에 쌓이므로 거기로 돌아간다.
+ * 홈의 «수신인 지정 미완료» 칩은 설정 홈을 거치지 않고 등록 화면으로 곧장 들어오고, 알림은 수신인 목록·
+ * 수신인·대리인 화면으로 곧장 들어온다 (#2321). 그 시작점이 [start] 다. 시작 화면을 스택 바닥에 두면
+ * 그 화면의 pop 이 곧 host 이탈이라, 이관 전처럼 부른 곳으로 돌아간다. 설정 홈·목록에서 들어온 화면은
+ * 그 위에 쌓이므로 거기로 돌아간다.
  *
  * ## 탈퇴 안내·확인이 공유하는 ViewModel
  *
@@ -77,12 +82,10 @@ public fun SettingNavHost(
     navigationCallbacks: FeatureNavigationCallbacks,
     externalActions: SettingExternalActions,
     modifier: Modifier = Modifier,
-    startWithRecipientRegistration: Boolean = false,
+    start: SettingStart = SettingStart.HOME,
+    receiverId: Long? = null,
 ) {
-    val backStack =
-        rememberNavBackStack(
-            if (startWithRecipientRegistration) SettingRoute.RecipientRegisterRoute else SettingRoute.SettingHomeRoute,
-        )
+    val backStack = rememberNavBackStack(startRoute(start, receiverId))
     val actions =
         remember(backStack, navigationCallbacks, externalActions) {
             SettingLocalNavActions(backStack, navigationCallbacks, externalActions)
@@ -159,7 +162,22 @@ public fun SettingNavHost(
                     NotificationSettingScreen(
                         onBack = actions::popBack,
                         onPushNotificationClick = actions::onPushNotificationClick,
+                        onNotificationPreferenceClick = actions::onNotificationPreferenceClick,
+                        onDelegateClick = actions::onDelegateClick,
+                        onAnniversaryClick = actions::onAnniversaryClick,
                     )
+                }
+
+                entry<SettingRoute.NotificationPreferenceRoute> {
+                    NotificationPreferenceScreen(onBack = actions::popBack)
+                }
+
+                entry<SettingRoute.DelegateRoute> {
+                    DelegateScreen(onBack = actions::popBack)
+                }
+
+                entry<SettingRoute.AnniversaryRoute> {
+                    AnniversaryScreen(onBack = actions::popBack)
                 }
 
                 entry<SettingRoute.PushNotificationRoute> {
@@ -261,3 +279,20 @@ public fun SettingNavHost(
             },
     )
 }
+
+private fun startRoute(
+    start: SettingStart,
+    receiverId: Long?,
+): SettingRoute =
+    when (start) {
+        SettingStart.HOME -> SettingRoute.SettingHomeRoute
+
+        SettingStart.RECIPIENT_REGISTRATION -> SettingRoute.RecipientRegisterRoute
+
+        SettingStart.RECIPIENT_LIST -> SettingRoute.RecipientListRoute()
+
+        // 수신인을 모르면 고를 수 있는 목록으로 연다.
+        SettingStart.RECIPIENT_EDIT -> receiverId?.let(SettingRoute::RecipientEditRoute) ?: SettingRoute.RecipientListRoute()
+
+        SettingStart.DELEGATE -> SettingRoute.DelegateRoute
+    }

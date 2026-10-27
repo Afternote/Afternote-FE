@@ -5,6 +5,7 @@ import com.afternote.core.network.dto.DeletePushTokenRequestDto
 import com.afternote.core.network.dto.EmailFindRequestDto
 import com.afternote.core.network.dto.FindSendCodeRequestDto
 import com.afternote.core.network.dto.LoginDto
+import com.afternote.core.network.dto.NotificationPreferencesRequestDto
 import com.afternote.core.network.dto.PasswordFindRequestDto
 import com.afternote.core.network.dto.PushInstallationRequestDto
 import com.afternote.core.network.dto.RegisterPushTokenRequestDto
@@ -55,6 +56,7 @@ class ApiWireContractSmokeTest {
     private lateinit var appVersionService: AppVersionApiService
     private lateinit var authService: AuthApiService
     private lateinit var userService: UserApiService
+    private lateinit var notificationService: NotificationApiService
 
     @Before
     fun setUp() {
@@ -85,6 +87,7 @@ class ApiWireContractSmokeTest {
         appVersionService = publicRetrofit.create(AppVersionApiService::class.java)
         authService = publicRetrofit.create(AuthApiService::class.java)
         userService = authenticatedRetrofit.create(UserApiService::class.java)
+        notificationService = authenticatedRetrofit.create(NotificationApiService::class.java)
     }
 
     @Test
@@ -283,12 +286,65 @@ class ApiWireContractSmokeTest {
                     """.trimIndent(),
             )
 
-            val result = userService.getNotificationTarget(42L)
+            val result = notificationService.getTarget(42L)
 
             assertEquals("TIME_LETTER_LIST", result.data?.data?.get("destination"))
             assertEquals(true, result.data?.deleted)
             assertEquals("삭제된 항목이에요", result.data?.toast)
             assertExactlyOneRecordedRequest("GET", "/api/v1/users/notifications/42/target")
+        }
+
+    @Test
+    fun `notification preferences PUT sends HH-mm and decodes server LocalTime`() =
+        runTest {
+            installExpectation(
+                method = "PUT",
+                path = "/api/v1/users/me/notification-preferences",
+                requestHeaders = mapOf("Authorization" to "Bearer contract-token"),
+                requestBody =
+                    wireJson
+                        .parseToJsonElement(
+                            """{"enabled":true,"time":"18:00","weekdays":["MONDAY","FRIDAY"],"weeklyGoal":3}""",
+                        ).jsonObject,
+                responseBody =
+                    """
+                    {"status":200,"code":200,"message":"ok",
+                     "data":{"enabled":true,"time":"18:00:00","weekdays":["MONDAY","FRIDAY"],"weeklyGoal":3}}
+                    """.trimIndent(),
+            )
+
+            val result =
+                notificationService.updatePreferences(
+                    NotificationPreferencesRequestDto(
+                        enabled = true,
+                        time = "18:00",
+                        weekdays = listOf("MONDAY", "FRIDAY"),
+                        weeklyGoal = 3,
+                    ),
+                )
+
+            assertEquals("\"18:00:00\"", result.data?.time.toString())
+            assertExactlyOneRecordedRequest("PUT", "/api/v1/users/me/notification-preferences")
+        }
+
+    @Test
+    fun `notification entry POST decodes easy questions`() =
+        runTest {
+            installExpectation(
+                method = "POST",
+                path = "/api/v1/users/me/notification-preferences/entry",
+                requestHeaders = mapOf("Authorization" to "Bearer contract-token"),
+                responseBody =
+                    """
+                    {"status":200,"code":200,"message":"ok",
+                     "data":{"showEasyQuestions":true,"easyQuestions":["a","b","c"],"procedureCancelled":false}}
+                    """.trimIndent(),
+            )
+
+            val result = notificationService.reportEntry()
+
+            assertEquals(listOf("a", "b", "c"), result.data?.easyQuestions)
+            assertExactlyOneRecordedRequest("POST", "/api/v1/users/me/notification-preferences/entry")
         }
 
     @Test
@@ -301,7 +357,7 @@ class ApiWireContractSmokeTest {
                 responseBody = """{"status":200,"code":200,"message":"ok","data":null}""",
             )
 
-            val result = userService.markNotificationRead(42L)
+            val result = notificationService.markRead(42L)
 
             assertEquals(200, result.status)
             assertExactlyOneRecordedRequest("PATCH", "/api/v1/users/notifications/42/read")

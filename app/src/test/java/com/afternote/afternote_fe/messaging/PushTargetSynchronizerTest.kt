@@ -3,6 +3,7 @@ package com.afternote.afternote_fe.messaging
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.push.DevicePushTargetProvider
 import com.afternote.core.domain.push.PushPermission
+import com.afternote.core.domain.push.PushRegistration
 import com.afternote.core.domain.repository.push.PushTargetRepository
 import com.afternote.core.domain.testing.FakeAuthRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -317,6 +318,25 @@ class PushTargetSynchronizerTest {
             assertEquals(listOf("fid-1", "fid-1"), pushTargetRepository.registered)
         }
 
+    @Test
+    fun `서버가 식별자를 무효라 하면 새로 발급받아 한 번만 다시 등록한다`() =
+        runTest(dispatcher) {
+            val pushTargetRepository = RecordingPushTargetRepository(invalidTargetIds = setOf("fid-dead", "fid-new"))
+            val provider = FakeDevicePushTargetProvider(resetTo = "fid-new") { "fid-dead" }
+            val synchronizer =
+                synchronizer(
+                    authRepository = FakeAuthRepository(loggedIn = true, accessToken = "access"),
+                    pushTargetRepository = pushTargetRepository,
+                    devicePushTargetProvider = provider,
+                )
+
+            backgroundScope.launch { synchronizer.observeLogin() }
+            advanceUntilIdle()
+
+            assertEquals(listOf("fid-dead", "fid-new"), pushTargetRepository.registered)
+            assertEquals(1, provider.resetCalls)
+        }
+
     private fun synchronizer(
         authRepository: FakeAuthRepository,
         pushTargetRepository: PushTargetRepository,
@@ -358,11 +378,19 @@ class PushTargetSynchronizerTest {
 
     /** 등록·해제 두 경로가 같은 값을 본다. 던지게 만들려면 [targetId] 가 던지면 된다. */
     private class FakeDevicePushTargetProvider(
+        private val resetTo: String? = null,
         private val targetId: () -> String?,
     ) : DevicePushTargetProvider {
+        var resetCalls = 0
+
         override suspend fun currentTargetId(): String? = targetId()
 
         override suspend fun existingTargetId(): String? = targetId()
+
+        override suspend fun resetTargetId(): String? {
+            resetCalls++
+            return resetTo
+        }
     }
 
     // recordFailure 는 문구 유출을 막으려 예외를 redact 한 사본으로 바꾸고 원래 타입은
@@ -386,7 +414,7 @@ class PushTargetSynchronizerTest {
             targetId: String,
             installationId: String,
             permission: PushPermission,
-        ): Result<Unit> = throw IllegalStateException("boom")
+        ): Result<PushRegistration> = throw IllegalStateException("boom")
 
         override suspend fun unregister(targetId: String): Result<Unit> = throw IllegalStateException("boom")
 
@@ -398,6 +426,7 @@ class PushTargetSynchronizerTest {
 
     private class RecordingPushTargetRepository(
         private var failRegistrations: Int = 0,
+        private val invalidTargetIds: Set<String> = emptySet(),
     ) : PushTargetRepository {
         val registrations = mutableListOf<Triple<String, String, PushPermission>>()
         val registered: List<String>
@@ -409,13 +438,13 @@ class PushTargetSynchronizerTest {
             targetId: String,
             installationId: String,
             permission: PushPermission,
-        ): Result<Unit> {
+        ): Result<PushRegistration> {
             registrations += Triple(targetId, installationId, permission)
             if (failRegistrations > 0) {
                 failRegistrations--
                 return Result.failure(IllegalStateException("등록 실패"))
             }
-            return Result.success(Unit)
+            return Result.success(PushRegistration(requiresReset = targetId in invalidTargetIds))
         }
 
         override suspend fun unregister(targetId: String): Result<Unit> {

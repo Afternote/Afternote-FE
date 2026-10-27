@@ -25,12 +25,16 @@ sealed interface MindRecordRoute {
      * [recordId] 가 있으면 그 일기를 프리필하고 저장 시 PATCH 한다. [isDraft] 가 true 면
      * 임시저장 이어쓰기(등록 시 `isDraft=false` 로 전환), false 면 **정식 기록 수정**이다.
      * [yearMonth](`yyyy-MM`) 는 해당 항목을 찾을 달이다.
+     *
+     * [prefillTitle] 은 새 일기의 제목을 미리 채운다. 오래 비웠다 돌아온 사용자가 고른 «쉬운 질문» 이
+     * 여기로 온다 (#2321). 기존 기록을 여는 경로에서는 쓰지 않는다.
      */
     @Serializable
     data class DiaryWriteRoute(
         val recordId: Long? = null,
         val yearMonth: String? = null,
         val isDraft: Boolean = true,
+        val prefillTitle: String? = null,
     ) : MindRecordRoute
 
     /**

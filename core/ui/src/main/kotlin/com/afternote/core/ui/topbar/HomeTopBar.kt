@@ -1,16 +1,20 @@
 package com.afternote.core.ui.topbar
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -19,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
+import com.afternote.core.ui.theme.AfternoteDesign
 
 /** 프로필 아이콘 앵커. 장식이라 semantics 이름이 없어 테스트가 이 태그로 존재 여부를 본다. */
 const val PROFILE_ICON_TEST_TAG = "home_top_bar_profile"
@@ -29,6 +34,9 @@ const val PROFILE_ICON_TEST_TAG = "home_top_bar_profile"
  * @param onSettingClick 설정 진입 콜백. `null` 이면 설정 아이콘을 그리지 않는다 — 회원이 아닌
  *   흐름(수신자 열람)은 설정이 향할 곳이 없어서, no-op 을 넘겨 아이콘만 남기면 눌러도 아무 일이
  *   일어나지 않는 가짜 액션이 된다 (#620).
+ * @param onNotificationClick 알림함 진입 콜백 (#2321). `null` 이면 알림 아이콘을 그리지 않는다 — 설정과 같은
+ *   이유다. 수신자 홈에는 알림함이 없다.
+ * @param hasUnreadNotification 읽지 않은 알림이 있으면 아이콘 위에 점을 찍는다.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +44,8 @@ fun HomeTopBar(
     modifier: Modifier = Modifier,
     showProfileIcon: Boolean = true,
     onSettingClick: (() -> Unit)? = {},
+    onNotificationClick: (() -> Unit)? = null,
+    hasUnreadNotification: Boolean = false,
 ) {
     TopAppBar(
         navigationIcon = {
@@ -71,6 +81,13 @@ fun HomeTopBar(
                     }
                 }
 
+                if (onNotificationClick != null) {
+                    NotificationIcon(hasUnread = hasUnreadNotification, onClick = onNotificationClick)
+                    if (onSettingClick != null) {
+                        Spacer(modifier = Modifier.width(15.dp))
+                    }
+                }
+
                 if (onSettingClick != null) {
                     Image(
                         painter = painterResource(R.drawable.core_ui_settings),
@@ -91,4 +108,35 @@ fun HomeTopBar(
             ),
         modifier = modifier,
     )
+}
+
+@Composable
+private fun NotificationIcon(
+    hasUnread: Boolean,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier =
+            Modifier
+                .size(18.dp)
+                .clickable(role = Role.Button, onClick = onClick),
+    ) {
+        Image(
+            painter = painterResource(R.drawable.core_ui_bell),
+            contentDescription =
+                stringResource(
+                    if (hasUnread) R.string.core_ui_home_top_bar_notification_unread else R.string.core_ui_home_top_bar_notification,
+                ),
+            modifier = Modifier.size(18.dp),
+        )
+        if (hasUnread) {
+            Box(
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .size(6.dp)
+                        .background(AfternoteDesign.colors.error, CircleShape),
+            )
+        }
+    }
 }

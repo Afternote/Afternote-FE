@@ -206,7 +206,6 @@ class SettingEditorSaveSignalAndroidTest {
 
                                 override fun onWithdrawSuccess() = Unit
                             },
-                        startWithRecipientRegistration = false,
                     )
                 }
             }

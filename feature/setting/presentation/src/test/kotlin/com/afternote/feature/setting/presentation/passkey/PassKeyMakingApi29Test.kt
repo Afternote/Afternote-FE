@@ -27,12 +27,14 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.push.DevicePushTargetProvider
 import com.afternote.core.domain.repository.UserProfileCacheRepository
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.setting.domain.NotificationPreferenceRepository
 import com.afternote.feature.setting.domain.Passkey
 import com.afternote.feature.setting.domain.PasskeyRepository
 import com.afternote.feature.setting.domain.SettingAccountRepository
 import com.afternote.feature.setting.domain.SettingNotificationRepository
 import com.afternote.feature.setting.domain.testing.FakeSettingAccountRepository
 import com.afternote.feature.setting.domain.testing.FakeSettingNotificationRepository
+import com.afternote.feature.setting.domain.testing.StrictNotificationPreferenceRepository
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -105,11 +107,16 @@ class PassKeyMakingApi29Test {
     val notificationRepository: SettingNotificationRepository = FakeSettingNotificationRepository.strict()
 
     @BindValue
+    val notificationPreferenceRepository: NotificationPreferenceRepository = StrictNotificationPreferenceRepository
+
+    @BindValue
     val pushTargetProvider: DevicePushTargetProvider =
         object : DevicePushTargetProvider {
             override suspend fun currentTargetId(): String? = error("생체 인증 오류 경로는 푸시 대상을 조회하지 않는다")
 
             override suspend fun existingTargetId(): String? = error("생체 인증 오류 경로는 푸시 대상을 조회하지 않는다")
+
+            override suspend fun resetTargetId(): String? = error("생체 인증 오류 경로는 푸시 대상을 조회하지 않는다")
         }
 
     @BindValue

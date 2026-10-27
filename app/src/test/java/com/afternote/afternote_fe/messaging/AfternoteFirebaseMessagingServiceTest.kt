@@ -131,6 +131,12 @@ class AfternoteFirebaseMessagingServiceTest {
         val intent = contentIntentOfSingleNotification()
         assertEquals("time_letter", intent.getStringExtra(NotificationPendingIntentFactory.EXTRA_NOTIFICATION_DESTINATION))
         assertEquals(42L, intent.getLongExtra(NotificationPendingIntentFactory.EXTRA_NOTIFICATION_SERVER_ID, 0L))
+        val serverData = intent.getBundleExtra(NotificationPendingIntentFactory.EXTRA_NOTIFICATION_SERVER_DATA)!!
+        assertEquals("TIME_LETTER_DETAIL", serverData.getString("destination"))
+        assertEquals("123", serverData.getString("timeLetterId"))
+        assertEquals("EDIT", serverData.getString("action"))
+        // 제목·본문처럼 목적지 해석에 쓰지 않는 키는 Intent 에 싣지 않는다.
+        assertEquals(null, serverData.getString("body"))
     }
 
     @Test

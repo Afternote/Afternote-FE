@@ -27,6 +27,7 @@ import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.ui.Route
+import com.afternote.core.ui.SettingStart
 import com.afternote.core.ui.navigation.FeatureNavigationCallbacks
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.setting.presentation.navigation.SettingExternalActions
@@ -90,7 +91,7 @@ class SettingImplementedCoverageAndroidTest {
 
                                 override fun onWithdrawSuccess() = Unit
                             },
-                        startWithRecipientRegistration = startWithRecipientRegistration,
+                        start = if (startWithRecipientRegistration) SettingStart.RECIPIENT_REGISTRATION else SettingStart.HOME,
                     )
                 }
             }
@@ -114,7 +115,7 @@ class SettingImplementedCoverageAndroidTest {
     /**
      * 루트의 `composable<Route.Setting>` 이 entry 의 인자를 host 시작점으로 넘기는 한 줄을 실제 루트
      * 그래프로 지난다. [launchHost] 는 host 를 직접 띄우므로 그 결선은 이 케이스만 본다 — 인자를
-     * 흘리면(`startWithRecipientRegistration = false` 고정) 설정 홈이 첫 화면이 되어 여기서 빨개진다.
+     * 흘리면(`start = SettingStart.HOME` 고정) 설정 홈이 첫 화면이 되어 여기서 빨개진다.
      */
     @Test
     fun appNavigation_settingRouteArgumentSelectsRegisterAsFirstScreen() {
@@ -126,7 +127,7 @@ class SettingImplementedCoverageAndroidTest {
             activity.setContent {
                 AfternoteTheme {
                     AppNavigation(
-                        startDestination = Route.Setting(startWithRecipientRegistration = true),
+                        startDestination = Route.Setting(start = SettingStart.RECIPIENT_REGISTRATION),
                         appState = AppState(navController),
                     )
                 }

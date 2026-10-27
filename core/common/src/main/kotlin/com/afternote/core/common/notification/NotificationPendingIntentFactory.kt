@@ -3,6 +3,7 @@ package com.afternote.core.common.notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 
 /**
  * 앱 알림의 content [PendingIntent]를 동일한 Android 계약으로 생성한다.
@@ -27,6 +28,8 @@ import android.content.Intent
  *   배선을 빠뜨린 알림이 조용히 홈으로만 떨어진다.
  * @param serverNotificationId 서버가 만든 알림이면 그 ID. 탭한 뒤 현재 목적지 확인과 읽음 처리에 쓴다.
  *   앱이 스스로 만든 알림은 null 이다.
+ * @param serverData 서버 알림의 목적지 data(`destination`·ID·`action`). 현재 목적지를 묻지 못할 때 이걸로
+ *   안쪽 화면까지 연다. 거르는 것은 읽는 쪽 몫이다 — 여기서는 받은 문자열을 그대로 싣는다.
  */
 object NotificationPendingIntentFactory {
     const val EXTRA_NOTIFICATION_ENTRY = "com.afternote.notification.ENTRY"
@@ -40,6 +43,7 @@ object NotificationPendingIntentFactory {
     const val EXTRA_NOTIFICATION_OCCURRENCE_TOKEN = "com.afternote.notification.OCCURRENCE_TOKEN"
     const val EXTRA_NOTIFICATION_DESTINATION = "com.afternote.notification.DESTINATION"
     const val EXTRA_NOTIFICATION_SERVER_ID = "com.afternote.notification.SERVER_ID"
+    const val EXTRA_NOTIFICATION_SERVER_DATA = "com.afternote.notification.SERVER_DATA"
 
     fun create(
         context: Context,
@@ -47,6 +51,7 @@ object NotificationPendingIntentFactory {
         occurrenceId: String,
         destination: NotificationDestination,
         serverNotificationId: Long? = null,
+        serverData: Map<String, String> = emptyMap(),
     ): PendingIntent? {
         val action = notificationAction(source = source, occurrenceId = occurrenceId)
         val launchIntent =
@@ -58,6 +63,12 @@ object NotificationPendingIntentFactory {
                     putExtra(EXTRA_NOTIFICATION_OCCURRENCE_TOKEN, occurrenceId)
                     putExtra(EXTRA_NOTIFICATION_DESTINATION, destination.contractValue)
                     serverNotificationId?.let { putExtra(EXTRA_NOTIFICATION_SERVER_ID, it) }
+                    if (serverData.isNotEmpty()) {
+                        putExtra(
+                            EXTRA_NOTIFICATION_SERVER_DATA,
+                            Bundle().apply { serverData.forEach { (key, value) -> putString(key, value) } },
+                        )
+                    }
                     this.action = action
                     addFlags(
                         Intent.FLAG_ACTIVITY_NEW_TASK or

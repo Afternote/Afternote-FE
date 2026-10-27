@@ -6,6 +6,7 @@ import com.afternote.core.network.service.AccountApiService
 import com.afternote.core.network.service.AppVersionApiService
 import com.afternote.core.network.service.AuthApiService
 import com.afternote.core.network.service.ImageApiService
+import com.afternote.core.network.service.NotificationApiService
 import com.afternote.core.network.service.ReceiverInvitationApiService
 import com.afternote.core.network.service.TokenApiService
 import com.afternote.core.network.service.UserApiService
@@ -72,4 +73,8 @@ object ServiceModule {
     @Singleton
     fun provideReceiverInvitationApiService(retrofit: Retrofit): ReceiverInvitationApiService =
         retrofit.create<ReceiverInvitationApiService>()
+
+    @Provides
+    @Singleton
+    fun provideNotificationApiService(retrofit: Retrofit): NotificationApiService = retrofit.create<NotificationApiService>()
 }

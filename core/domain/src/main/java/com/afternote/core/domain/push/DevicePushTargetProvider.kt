@@ -32,4 +32,12 @@ interface DevicePushTargetProvider {
      * 발급된 적이 없거나 조회에 실패하면 null. 구현은 예외를 올리지 않는다.
      */
     suspend fun existingTargetId(): String?
+
+    /**
+     * 지금 식별자를 버리고 새로 발급받는다 (#2321). 서버가 이 식별자를 무효(FCM UNREGISTERED)로
+     * 판정했을 때만 쓴다 — 무효 판정은 같은 값을 다시 등록해도 풀리지 않는다.
+     *
+     * 실패하면 null. 구현은 예외를 올리지 않는다.
+     */
+    suspend fun resetTargetId(): String?
 }

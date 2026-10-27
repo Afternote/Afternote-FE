@@ -42,6 +42,17 @@ class FirebaseDevicePushTargetProvider
 
         override suspend fun existingTargetId(): String? = foldFailure(stage = STAGE_INSTALLATION_ID) { installationId() }
 
+        /**
+         * FID 를 지우고 등록 시퀀스를 다시 돌려 새 FID 를 받는다 (#2321). 지운 뒤의 `register()` 가 새 FID 를
+         * 만들고, 그 회전은 `onRegistered` 로도 한 번 더 통보된다 — 동기화기가 같은 값 재전송을 거른다.
+         */
+        override suspend fun resetTargetId(): String? =
+            foldFailure(stage = STAGE_RESET) {
+                FirebaseInstallations.getInstance().delete().awaitOrNull(stage = STAGE_RESET)
+                FirebaseMessaging.getInstance().register().awaitOrNull(stage = STAGE_REGISTER)
+                installationId()
+            }
+
         private suspend fun installationId(): String? = FirebaseInstallations.getInstance().id.awaitOrNull(stage = STAGE_INSTALLATION_ID)
 
         /**
@@ -76,3 +87,4 @@ class FirebaseDevicePushTargetProvider
 
 private const val STAGE_REGISTER = "fcm_register"
 private const val STAGE_INSTALLATION_ID = "fcm_installation_id"
+private const val STAGE_RESET = "fcm_reset"

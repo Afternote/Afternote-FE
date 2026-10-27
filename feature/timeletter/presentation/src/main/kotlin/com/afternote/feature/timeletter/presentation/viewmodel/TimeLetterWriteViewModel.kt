@@ -46,8 +46,8 @@ class TimeLetterWriteViewModel
         private val voiceRecorderRepository: VoiceRecorderRepository,
         private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
-        private val editingTimeLetterId =
-            savedStateHandle.toRoute<TimeLetterRoute.TimeLetterWriteRoute>().timeLetterId
+        private val route = savedStateHandle.toRoute<TimeLetterRoute.TimeLetterWriteRoute>()
+        private val editingTimeLetterId = route.timeLetterId
 
         private val _uiState =
             MutableStateFlow(
@@ -76,6 +76,11 @@ class TimeLetterWriteViewModel
                         .getOrElse { emptyList() }
                         .associate { it.receiverId to it.name }
                 editingTimeLetterId?.let { loadEditingTimeLetter(it) }
+                // 이름 표를 받은 뒤에 고른다 — 먼저 고르면 칩에 이름이 비어 보인다. 이미 고른 수신인이 있으면
+                // (화면 복원 뒤 사용자가 바꾼 값) 덮지 않는다.
+                route.prefillReceiverId
+                    ?.takeIf { editingTimeLetterId == null && _uiState.value.recipientIds.isEmpty() }
+                    ?.let { setRecipients(listOf(it)) }
             }
             loadDraftCount()
             observeRecipientResult()

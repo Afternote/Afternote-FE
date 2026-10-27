@@ -3,6 +3,8 @@ package com.afternote.afternote_fe.navigation
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
+import android.provider.Settings
 import androidx.compose.animation.ContentTransform
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -27,6 +29,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.NotificationManagerCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -38,6 +41,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation3.runtime.entryProvider
 import com.afternote.afternote_fe.MainViewModel
+import com.afternote.afternote_fe.notification.NotificationEntryRequest
 import com.afternote.afternote_fe.notification.NotificationPermissionEffect
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
@@ -50,6 +54,8 @@ import com.afternote.feature.afternote.presentation.navigation.AfternoteNavHost
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceivedAfternoteNavHost
 import com.afternote.feature.home.presentation.HomeTabScreen
 import com.afternote.feature.home.presentation.HomeTabViewModel
+import com.afternote.feature.home.presentation.notification.NotificationInboxScreen
+import com.afternote.feature.home.presentation.notification.rememberHasUnreadNotification
 import com.afternote.feature.home.presentation.receiver.ReceiverHomeEntry
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.mindrecord.presentation.navigation.mindRecordNavGraph
@@ -163,8 +169,23 @@ fun AppNavigation(
         }
     }
 
+    val pendingTimeLetterDestinations = appState.pendingTimeLetterDestinations
+    LaunchedEffect(pendingTimeLetterDestinations, timeLetterEntry) {
+        val destinations = pendingTimeLetterDestinations ?: return@LaunchedEffect
+        if (timeLetterEntry != null) {
+            timeLetterController.popBackStack(TimeLetterRoute.TimeLetterHomeRoute, inclusive = false)
+            destinations.forEach { destination -> timeLetterController.navigate(destination) }
+            appState.consumeTimeLetterDestinations(destinations)
+        }
+    }
+
     NotificationPermissionEffect(snackbarHostState = snackbarHostState)
     NotificationEntryEffect(
+        appState = appState,
+        mainViewModel = mainViewModel,
+        snackbarHostState = snackbarHostState,
+    )
+    EntryNoticeEffect(
         appState = appState,
         mainViewModel = mainViewModel,
         snackbarHostState = snackbarHostState,
@@ -211,10 +232,29 @@ fun AppNavigation(
                                 onRetryLoad = { viewModel.loadHomeSummary(isRefresh = true) },
                             )
                         var isFirstResume by rememberSaveable { mutableStateOf(true) }
+                        var areNotificationsEnabled by remember { mutableStateOf(true) }
                         LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
                             if (isFirstResume) isFirstResume = false else viewModel.refreshOnReturn()
+                            areNotificationsEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
                         }
-                        HomeTabScreen(uiState = uiState, actions = actions)
+                        HomeTabScreen(
+                            uiState = uiState,
+                            actions = actions,
+                            onNotificationClick = { appState.navigate(Route.NotificationInbox) },
+                            hasUnreadNotification = rememberHasUnreadNotification(),
+                            onTurnOnNotificationClick =
+                                if (areNotificationsEnabled) null else ({ context.openAppNotificationSettings() }),
+                        )
+                    }
+                    entry<Route.NotificationInbox> {
+                        NotificationInboxScreen(
+                            onBack = { appState.exitCurrentEntry() },
+                            onItemClick = { notificationId, data ->
+                                mainViewModel.enqueueNotificationEntry(
+                                    NotificationEntryRequest.fromInbox(notificationId = notificationId, data = data),
+                                )
+                            },
+                        )
                     }
                     entry<Route.MindRecord> {
                         DisposableEffect(Unit) { onDispose { mindRecordHostGeneration++ } }
@@ -255,7 +295,8 @@ fun AppNavigation(
                         SettingNavHost(
                             navigationCallbacks = rootNavigationCallbacks,
                             externalActions = settingExternalActions,
-                            startWithRecipientRegistration = route.startWithRecipientRegistration,
+                            start = route.start,
+                            receiverId = route.receiverId,
                         )
                     }
                 },
@@ -288,6 +329,15 @@ private fun rememberRootNavigationCallbacks(
             override fun onAtRootChanged(isAtRoot: Boolean) = onAtRootChanged(isAtRoot)
         }
     }
+
+/** 이 앱의 시스템 알림 설정을 연다. 열 수 없는 기기면 아무것도 하지 않는다. */
+private fun Context.openAppNotificationSettings() {
+    runCatching {
+        startActivity(
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName),
+        )
+    }
+}
 
 private fun Context.findActivity(): Activity? =
     when (this) {

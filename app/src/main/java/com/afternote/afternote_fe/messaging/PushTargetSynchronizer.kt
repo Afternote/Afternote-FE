@@ -36,6 +36,12 @@ import javax.inject.Singleton
  * 확정과 [onForeground] 때 권한을 읽어, 직전에 보고한 값과 다르면 `push-installations` 로 보고하고
  * 알고 있는 식별자를 새 권한으로 다시 등록한다. 사용자가 시스템 설정에서 알림을 끄고 돌아오는 경로가
  * 이 [onForeground] 다. 등록 중복 판정도 (식별자, 권한) 쌍으로 한다 — 권한만 바뀐 재등록은 보내야 한다.
+ *
+ * ### 무효 식별자 (#2321)
+ *
+ * 서버가 등록 응답에 `requiresReset` 을 실으면 그 식별자로 보낸 발송이 FCM 에서 UNREGISTERED 로
+ * 거절됐다는 뜻이다. 같은 값을 다시 보내도 풀리지 않으므로 프로세스당 한 번 새 식별자를 발급받아
+ * 등록한다. 발급은 FCM 을 기다리므로 반드시 [mutex] 밖에서 한다(위 교착 근거).
  */
 @Singleton
 class PushTargetSynchronizer
@@ -57,6 +63,9 @@ class PushTargetSynchronizer
         private var knownTargetId: String? = null
 
         private var lastReportedPermission: PushPermission? = null
+
+        /** 이 프로세스에서 이미 새 식별자 발급을 시도했다. 서버가 계속 무효라 해도 무한히 돌지 않는다. */
+        private var resetAttempted = false
 
         /**
          * 로그인 상태를 계속 지켜본다. 앱 프로세스가 사는 동안 돈다.
@@ -114,19 +123,20 @@ class PushTargetSynchronizer
         }
 
         private suspend fun syncPermission() {
-            mutex.withLock {
-                val permission = permissionReader.current()
-                val installationId = installationIdStore.installationId()
-                if (lastReportedPermission != permission) {
-                    pushTargetRepository
-                        .reportPermission(installationId, permission)
-                        .onSuccess { lastReportedPermission = permission }
-                        .onFailure { error ->
-                            errorReporter.recordFailure(error, mapOf("stage" to STAGE_REPORT_PERMISSION))
-                        }
-                }
-                knownTargetId?.let { targetId -> registerLocked(targetId, installationId, permission) }
-            }
+            mutex
+                .withLock {
+                    val permission = permissionReader.current()
+                    val installationId = installationIdStore.installationId()
+                    if (lastReportedPermission != permission) {
+                        pushTargetRepository
+                            .reportPermission(installationId, permission)
+                            .onSuccess { lastReportedPermission = permission }
+                            .onFailure { error ->
+                                errorReporter.recordFailure(error, mapOf("stage" to STAGE_REPORT_PERMISSION))
+                            }
+                    }
+                    knownTargetId?.let { targetId -> registerLocked(targetId, installationId, permission) } ?: false
+                }.let { needsReset -> if (needsReset) resetTargetId() }
         }
 
         /**
@@ -143,30 +153,53 @@ class PushTargetSynchronizer
         }
 
         private suspend fun registerOnce(targetId: String) {
-            mutex.withLock {
-                registerLocked(
-                    targetId = targetId,
-                    installationId = installationIdStore.installationId(),
-                    permission = permissionReader.current(),
-                )
-            }
+            val needsReset =
+                mutex.withLock {
+                    registerLocked(
+                        targetId = targetId,
+                        installationId = installationIdStore.installationId(),
+                        permission = permissionReader.current(),
+                    )
+                }
+            if (needsReset) resetTargetId()
         }
 
-        /** 같은 값을 연달아 보내지 않는다 — 서버 동시 upsert 가 500 을 내기 때문이다. [mutex] 안에서만 부른다. */
+        /** 새 식별자를 받아 등록한다. FCM 을 기다리므로 [mutex] 밖에서만 부른다. */
+        private suspend fun resetTargetId() {
+            val newTargetId =
+                runCatchingCancellable { devicePushTargetProvider.resetTargetId() }
+                    .onFailure { error ->
+                        errorReporter.recordFailure(error, mapOf("stage" to STAGE_RESET))
+                    }.getOrNull() ?: return
+            registerOnce(newTargetId)
+        }
+
+        /**
+         * 같은 값을 연달아 보내지 않는다 — 서버 동시 upsert 가 500 을 내기 때문이다. [mutex] 안에서만 부른다.
+         *
+         * @return 서버가 이 식별자를 무효라 했고 이 프로세스에서 아직 새로 발급받아 보지 않았으면 true.
+         */
         private suspend fun registerLocked(
             targetId: String,
             installationId: String,
             permission: PushPermission,
-        ) {
+        ): Boolean {
             knownTargetId = targetId
             val registration = Registration(targetId, permission)
-            if (lastRegistered == registration) return
+            if (lastRegistered == registration) return false
+            var needsReset = false
             pushTargetRepository
                 .register(targetId, installationId, permission)
-                .onSuccess { lastRegistered = registration }
-                .onFailure { error ->
+                .onSuccess { result ->
+                    lastRegistered = registration
+                    if (result.requiresReset && !resetAttempted) {
+                        resetAttempted = true
+                        needsReset = true
+                    }
+                }.onFailure { error ->
                     errorReporter.recordFailure(error, mapOf("stage" to STAGE_REGISTER))
                 }
+            return needsReset
         }
 
         private data class Registration(
@@ -186,3 +219,4 @@ private const val STAGE_OBSERVE_LOGIN = "push_target_observe_login"
 private const val STAGE_TARGET_ROTATED = "push_target_rotated"
 private const val STAGE_REPORT_PERMISSION = "push_permission_report"
 private const val STAGE_FOREGROUND = "push_target_foreground"
+private const val STAGE_RESET = "push_target_reset"

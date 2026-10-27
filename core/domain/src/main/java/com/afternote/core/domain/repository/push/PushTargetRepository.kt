@@ -1,6 +1,7 @@
 package com.afternote.core.domain.repository.push
 
 import com.afternote.core.domain.push.PushPermission
+import com.afternote.core.domain.push.PushRegistration
 
 /**
  * 이 기기의 푸시 대상 식별자([com.afternote.core.domain.push.DevicePushTargetProvider])를
@@ -20,7 +21,7 @@ interface PushTargetRepository {
         targetId: String,
         installationId: String,
         permission: PushPermission,
-    ): Result<Unit>
+    ): Result<PushRegistration>
 
     /** 로그아웃 시 해제한다. 서버에 없는 값이어도 성공이다. */
     suspend fun unregister(targetId: String): Result<Unit>

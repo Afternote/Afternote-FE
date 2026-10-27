@@ -50,4 +50,6 @@ data class PushTokenDto(
     @SerialName("token") val token: String,
     @SerialName("platform") val platform: String,
     @SerialName("lastSeenAt") val lastSeenAt: String? = null,
+    /** 서버가 이 토큰을 FCM UNREGISTERED 로 판정했다 — 앱이 재설정 안내를 띄운다 (#2321). 옛 서버는 보내지 않는다. */
+    @SerialName("requiresReset") val requiresReset: Boolean? = null,
 )

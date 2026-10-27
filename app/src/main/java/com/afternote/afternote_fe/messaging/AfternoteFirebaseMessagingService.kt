@@ -8,6 +8,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.afternote.afternote_fe.R
+import com.afternote.afternote_fe.notification.NotificationIntentContract
 import com.afternote.afternote_fe.notification.ServerNotificationDestination
 import com.afternote.core.common.notification.NotificationDestination
 import com.afternote.core.common.notification.NotificationPendingIntentFactory
@@ -112,6 +113,7 @@ class AfternoteFirebaseMessagingService : FirebaseMessagingService() {
                             occurrenceId = occurrenceId,
                             destination = content.destination,
                             serverNotificationId = content.serverNotificationId,
+                            serverData = content.serverData,
                         )?.let(::setContentIntent)
                 }.build()
 
@@ -132,6 +134,7 @@ private data class FcmNotificationContent(
     val body: String?,
     val destination: NotificationDestination,
     val serverNotificationId: Long?,
+    val serverData: Map<String, String>,
 )
 
 private object FcmNotificationIdentity {
@@ -173,14 +176,14 @@ private object FcmNotificationContentResolver {
 
         val schemaVersion = data[KEY_SCHEMA_VERSION].nonBlankOrNull()
         val knownSchema = schemaVersion == null || schemaVersion == SUPPORTED_SCHEMA_VERSION
+        val serverData =
+            if (knownSchema) data.filterKeys(NotificationIntentContract.SERVER_DATA_KEYS::contains) else emptyMap()
 
         return FcmNotificationContent(
             title = title ?: fallbackTitle,
             body = body,
-            destination =
-                ServerNotificationDestination.toAppDestination(
-                    data[KEY_DESTINATION].takeIf { knownSchema },
-                ),
+            destination = ServerNotificationDestination.resolve(serverData).tab,
+            serverData = serverData,
             serverNotificationId =
                 data[KEY_NOTIFICATION_ID]
                     .nonBlankOrNull()
@@ -194,7 +197,6 @@ private object FcmNotificationContentResolver {
     private const val KEY_TITLE = "title"
     private const val KEY_BODY = "body"
     private const val KEY_SCHEMA_VERSION = "schemaVersion"
-    private const val KEY_DESTINATION = "destination"
     private const val KEY_NOTIFICATION_ID = "notificationId"
     private const val SUPPORTED_SCHEMA_VERSION = "1"
 }

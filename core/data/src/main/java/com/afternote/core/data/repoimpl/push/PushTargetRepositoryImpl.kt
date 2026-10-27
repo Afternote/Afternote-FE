@@ -1,11 +1,13 @@
 package com.afternote.core.data.repoimpl.push
 
 import com.afternote.core.domain.push.PushPermission
+import com.afternote.core.domain.push.PushRegistration
 import com.afternote.core.domain.repository.push.PushTargetRepository
 import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.core.network.dto.DeletePushTokenRequestDto
 import com.afternote.core.network.dto.PushInstallationRequestDto
 import com.afternote.core.network.dto.RegisterPushTokenRequestDto
+import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.core.network.service.UserApiService
 import javax.inject.Inject
@@ -25,17 +27,19 @@ internal class PushTargetRepositoryImpl
             targetId: String,
             installationId: String,
             permission: PushPermission,
-        ): Result<Unit> =
+        ): Result<PushRegistration> =
             runCatchingCancellable {
-                userApiService
-                    .registerPushToken(
-                        RegisterPushTokenRequestDto(
-                            token = targetId,
-                            platform = ANDROID_PLATFORM,
-                            installationId = installationId,
-                            notificationPermission = permission.name,
-                        ),
-                    ).requireStatus()
+                val response =
+                    userApiService
+                        .registerPushToken(
+                            RegisterPushTokenRequestDto(
+                                token = targetId,
+                                platform = ANDROID_PLATFORM,
+                                installationId = installationId,
+                                notificationPermission = permission.name,
+                            ),
+                        ).requireData()
+                PushRegistration(requiresReset = response.requiresReset == true)
             }
 
         override suspend fun unregister(targetId: String): Result<Unit> =
