@@ -2,6 +2,8 @@ package com.afternote.feature.setting.data
 
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.network.dto.DeletePushTokenRequestDto
+import com.afternote.core.network.dto.PushInstallationDto
+import com.afternote.core.network.dto.PushInstallationRequestDto
 import com.afternote.core.network.dto.PushTokenDto
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
@@ -92,6 +94,8 @@ internal class SettingUserApiServiceFake(
     override suspend fun registerPushToken(request: RegisterPushTokenRequestDto): BaseResponse<PushTokenDto> = TODO("이 테스트 미사용")
 
     override suspend fun deletePushToken(request: DeletePushTokenRequestDto): BaseResponse<Unit> = TODO("이 테스트 미사용")
+
+    override suspend fun reportPushInstallation(request: PushInstallationRequestDto): BaseResponse<PushInstallationDto> = TODO("이 테스트 미사용")
 
     override suspend fun getReceiverDeliveryConditions(receiverId: Long): BaseResponse<ReceiverDeliveryConditionDto> = TODO("이 테스트 미사용")
 

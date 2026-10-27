@@ -5,7 +5,9 @@ import com.afternote.core.network.dto.DeletePushTokenRequestDto
 import com.afternote.core.network.dto.EmailFindRequestDto
 import com.afternote.core.network.dto.FindSendCodeRequestDto
 import com.afternote.core.network.dto.LoginDto
+import com.afternote.core.network.dto.NotificationPreferencesRequestDto
 import com.afternote.core.network.dto.PasswordFindRequestDto
+import com.afternote.core.network.dto.PushInstallationRequestDto
 import com.afternote.core.network.dto.RegisterPushTokenRequestDto
 import com.afternote.core.network.dto.SocialLoginRequestDto
 import com.afternote.core.network.dto.delivery.ConditionStateDto
@@ -54,6 +56,7 @@ class ApiWireContractSmokeTest {
     private lateinit var appVersionService: AppVersionApiService
     private lateinit var authService: AuthApiService
     private lateinit var userService: UserApiService
+    private lateinit var notificationService: NotificationApiService
 
     @Before
     fun setUp() {
@@ -84,6 +87,7 @@ class ApiWireContractSmokeTest {
         appVersionService = publicRetrofit.create(AppVersionApiService::class.java)
         authService = publicRetrofit.create(AuthApiService::class.java)
         userService = authenticatedRetrofit.create(UserApiService::class.java)
+        notificationService = authenticatedRetrofit.create(NotificationApiService::class.java)
     }
 
     @Test
@@ -163,7 +167,11 @@ class ApiWireContractSmokeTest {
                 requestBody =
                     wireJson
                         .parseToJsonElement(
-                            """{"token":"fcm-token","platform":"ANDROID"}""",
+                            """
+                            {"token":"fcm-token","platform":"ANDROID",
+                             "installationId":"d92560f1-ad73-4bfb-8759-017c61ad5168",
+                             "notificationPermission":"GRANTED"}
+                            """.trimIndent(),
                         ).jsonObject,
                 responseBody =
                     """
@@ -182,7 +190,12 @@ class ApiWireContractSmokeTest {
 
             val result =
                 userService.registerPushToken(
-                    RegisterPushTokenRequestDto(token = "fcm-token", platform = "ANDROID"),
+                    RegisterPushTokenRequestDto(
+                        token = "fcm-token",
+                        platform = "ANDROID",
+                        installationId = "d92560f1-ad73-4bfb-8759-017c61ad5168",
+                        notificationPermission = "GRANTED",
+                    ),
                 )
 
             assertEquals(200, result.status)
@@ -209,6 +222,145 @@ class ApiWireContractSmokeTest {
 
             assertEquals(200, result.status)
             assertExactlyOneRecordedRequest("DELETE", "/api/v1/users/push-tokens")
+        }
+
+    @Test
+    fun `push installation PUT reports permission without a token`() =
+        runTest {
+            installExpectation(
+                method = "PUT",
+                path = "/api/v1/users/push-installations",
+                requestHeaders = mapOf("Authorization" to "Bearer contract-token"),
+                requestBody =
+                    wireJson
+                        .parseToJsonElement(
+                            """{"installationId":"d92560f1-ad73-4bfb-8759-017c61ad5168","permission":"DENIED"}""",
+                        ).jsonObject,
+                responseBody =
+                    """
+                    {
+                      "status": 200,
+                      "code": 200,
+                      "message": "ok",
+                      "data": {
+                        "installationId": "d92560f1-ad73-4bfb-8759-017c61ad5168",
+                        "permission": "DENIED",
+                        "showPermissionBanner": true
+                      }
+                    }
+                    """.trimIndent(),
+            )
+
+            val result =
+                userService.reportPushInstallation(
+                    PushInstallationRequestDto(
+                        installationId = "d92560f1-ad73-4bfb-8759-017c61ad5168",
+                        permission = "DENIED",
+                    ),
+                )
+
+            assertEquals(true, result.data?.showPermissionBanner)
+            assertExactlyOneRecordedRequest("PUT", "/api/v1/users/push-installations")
+        }
+
+    @Test
+    fun `notification target GET decodes destination map and deleted toast`() =
+        runTest {
+            installExpectation(
+                method = "GET",
+                path = "/api/v1/users/notifications/42/target",
+                requestHeaders = mapOf("Authorization" to "Bearer contract-token"),
+                responseBody =
+                    """
+                    {
+                      "status": 200,
+                      "code": 200,
+                      "message": "ok",
+                      "data": {
+                        "data": {"destination": "TIME_LETTER_LIST"},
+                        "deleted": true,
+                        "toast": "삭제된 항목이에요",
+                        "backDestination": "HOME"
+                      }
+                    }
+                    """.trimIndent(),
+            )
+
+            val result = notificationService.getTarget(42L)
+
+            assertEquals("TIME_LETTER_LIST", result.data?.data?.get("destination"))
+            assertEquals(true, result.data?.deleted)
+            assertEquals("삭제된 항목이에요", result.data?.toast)
+            assertExactlyOneRecordedRequest("GET", "/api/v1/users/notifications/42/target")
+        }
+
+    @Test
+    fun `notification preferences PUT sends HH-mm and decodes server LocalTime`() =
+        runTest {
+            installExpectation(
+                method = "PUT",
+                path = "/api/v1/users/me/notification-preferences",
+                requestHeaders = mapOf("Authorization" to "Bearer contract-token"),
+                requestBody =
+                    wireJson
+                        .parseToJsonElement(
+                            """{"enabled":true,"time":"18:00","weekdays":["MONDAY","FRIDAY"],"weeklyGoal":3}""",
+                        ).jsonObject,
+                responseBody =
+                    """
+                    {"status":200,"code":200,"message":"ok",
+                     "data":{"enabled":true,"time":"18:00:00","weekdays":["MONDAY","FRIDAY"],"weeklyGoal":3}}
+                    """.trimIndent(),
+            )
+
+            val result =
+                notificationService.updatePreferences(
+                    NotificationPreferencesRequestDto(
+                        enabled = true,
+                        time = "18:00",
+                        weekdays = listOf("MONDAY", "FRIDAY"),
+                        weeklyGoal = 3,
+                    ),
+                )
+
+            assertEquals("\"18:00:00\"", result.data?.time.toString())
+            assertExactlyOneRecordedRequest("PUT", "/api/v1/users/me/notification-preferences")
+        }
+
+    @Test
+    fun `notification entry POST decodes easy questions`() =
+        runTest {
+            installExpectation(
+                method = "POST",
+                path = "/api/v1/users/me/notification-preferences/entry",
+                requestHeaders = mapOf("Authorization" to "Bearer contract-token"),
+                responseBody =
+                    """
+                    {"status":200,"code":200,"message":"ok",
+                     "data":{"showEasyQuestions":true,"easyQuestions":["a","b","c"],"procedureCancelled":false}}
+                    """.trimIndent(),
+            )
+
+            val result = notificationService.reportEntry()
+
+            assertEquals(listOf("a", "b", "c"), result.data?.easyQuestions)
+            assertExactlyOneRecordedRequest("POST", "/api/v1/users/me/notification-preferences/entry")
+        }
+
+    @Test
+    fun `notification read PATCH targets the notification id`() =
+        runTest {
+            installExpectation(
+                method = "PATCH",
+                path = "/api/v1/users/notifications/42/read",
+                requestHeaders = mapOf("Authorization" to "Bearer contract-token"),
+                responseBody = """{"status":200,"code":200,"message":"ok","data":null}""",
+            )
+
+            val result = notificationService.markRead(42L)
+
+            assertEquals(200, result.status)
+            assertExactlyOneRecordedRequest("PATCH", "/api/v1/users/notifications/42/read")
         }
 
     @Test

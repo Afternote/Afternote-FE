@@ -1,6 +1,8 @@
 package com.afternote.core.network.service
 
 import com.afternote.core.network.dto.DeletePushTokenRequestDto
+import com.afternote.core.network.dto.PushInstallationDto
+import com.afternote.core.network.dto.PushInstallationRequestDto
 import com.afternote.core.network.dto.PushTokenDto
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
@@ -100,6 +102,12 @@ interface UserApiService {
     suspend fun deletePushToken(
         @Body request: DeletePushTokenRequestDto,
     ): BaseResponse<Unit>
+
+    /** 설치별 OS 알림 권한 보고 (#2321). 앱 실행·권한 변경 때 부른다. FCM 토큰이 없어도 된다. */
+    @PUT("users/push-installations")
+    suspend fun reportPushInstallation(
+        @Body request: PushInstallationRequestDto,
+    ): BaseResponse<PushInstallationDto>
 
     // 푸시 알림 설정 조회
     @GET("users/push-settings")

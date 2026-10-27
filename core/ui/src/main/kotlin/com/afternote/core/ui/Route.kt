@@ -54,6 +54,10 @@ sealed interface Route : NavKey {
     @Serializable
     data object Receiver : Route
 
+    /** 홈 탑바에서 여는 서버 알림함 (#2321). 홈 스택 위에 쌓인다. */
+    @Serializable
+    data object NotificationInbox : Route
+
     /** 카카오 수신자 초대 랜딩의 앱 루트 host (#944). 내부 화면은 수신자 피처 로컬 스택이 소유한다. */
     @Serializable
     data object ReceiverInvitation : Route
@@ -62,11 +66,23 @@ sealed interface Route : NavKey {
      * 설정 로컬 스택의 host destination (#1695).
      *
      * 설정 안의 화면은 전부 이 한 칸 아래의 로컬 Nav3 스택에 있다. 홈의 «수신인 지정 미완료» 칩은
-     * 설정 홈을 거치지 않고 등록 화면으로 곧장 들어오는데, 로컬 스택의 시작점은 host 가 정하므로
-     * 그 진입을 [startWithRecipientRegistration] 인자로 나른다.
+     * 설정 홈을 거치지 않고 등록 화면으로 곧장 들어오고, 알림은 수신인·대리인 화면으로 곧장 들어온다
+     * (#2321). 로컬 스택의 시작점은 host 가 정하므로 그 진입을 [start] 로 나른다. [receiverId] 는
+     * [SettingStart.RECIPIENT_EDIT] 일 때만 쓴다.
      */
     @Serializable
     data class Setting(
-        val startWithRecipientRegistration: Boolean = false,
+        val start: SettingStart = SettingStart.HOME,
+        val receiverId: Long? = null,
     ) : Route
+}
+
+/** [Route.Setting] 로컬 스택의 첫 화면. 시작 화면에서 back 하면 설정을 부른 곳으로 돌아간다. */
+@Serializable
+enum class SettingStart {
+    HOME,
+    RECIPIENT_REGISTRATION,
+    RECIPIENT_LIST,
+    RECIPIENT_EDIT,
+    DELEGATE,
 }

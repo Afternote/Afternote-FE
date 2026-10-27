@@ -3,6 +3,7 @@ package com.afternote.afternote_fe.navigation
 import android.app.Application
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import com.afternote.core.ui.Route
+import com.afternote.core.ui.SettingStart
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -16,7 +17,7 @@ import org.robolectric.annotation.GraphicsMode
  *
  * Nav2 시절엔 칩이 `SettingRoute.RecipientRegisterRoute` 를 루트에 직접 찍어 백스택 이름만으로
  * 목적지가 보였다. 설정이 로컬 스택이 된 뒤로는 루트에 [Route.Setting] 한 칸만 쌓이고 등록 화면
- * 진입은 그 인자([Route.Setting.startWithRecipientRegistration])가 나른다 — 인자를 버리는
+ * 진입은 그 인자([Route.Setting.start])가 나른다 — 인자를 버리는
  * [backStackRouteNames] 로는 설정 홈 진입과 구분되지 않으므로 [toRoute] 로 값까지 꺼내 단언한다.
  * 그 인자로 host 가 실제 첫 화면을 고르는 몫은 `SettingImplementedCoverageAndroidTest` 가 본다.
  */
@@ -48,7 +49,7 @@ class RecipientChipDestinationTest {
             listOf("NavHostRoot", "Home", "Setting"),
             composeRule.runOnIdle { harness.navController.backStackRouteNames() },
         )
-        assertEquals(true, currentSetting().startWithRecipientRegistration)
+        assertEquals(SettingStart.RECIPIENT_REGISTRATION, currentSetting().start)
     }
 
     @Test
@@ -57,6 +58,6 @@ class RecipientChipDestinationTest {
 
         composeRule.runOnIdle { harness.homeActions.onSettingClick() }
 
-        assertEquals(false, currentSetting().startWithRecipientRegistration)
+        assertEquals(SettingStart.HOME, currentSetting().start)
     }
 }

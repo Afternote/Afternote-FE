@@ -5,6 +5,7 @@ import android.content.Intent
 import com.afternote.core.common.notification.NotificationDestination
 import com.afternote.core.common.notification.NotificationPendingIntentFactory
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -81,6 +82,63 @@ class NotificationIntentContractTest {
 
         assertEquals(NotificationEntrySource.DAILY, request?.source)
         assertEquals("occurrence-1", request?.occurrenceId)
+    }
+
+    @Test
+    fun `서버 알림 ID를 PendingIntent 왕복으로 되읽는다`() {
+        val pendingIntent =
+            NotificationPendingIntentFactory.create(
+                context = RuntimeEnvironment.getApplication(),
+                source = NotificationEntrySource.FCM.contractValue,
+                occurrenceId = "notification:42",
+                destination = NotificationDestination.TIME_LETTER,
+                serverNotificationId = 42L,
+            )
+
+        val request = NotificationIntentContract.fromIntent(shadowOf(pendingIntent!!).savedIntent)
+
+        assertEquals(42L, request?.serverNotificationId)
+        assertEquals(NotificationDestination.TIME_LETTER, request?.destination)
+    }
+
+    @Test
+    fun `서버 data 는 목적지 키만 되읽는다`() {
+        val pendingIntent =
+            NotificationPendingIntentFactory.create(
+                context = RuntimeEnvironment.getApplication(),
+                source = NotificationEntrySource.FCM.contractValue,
+                occurrenceId = "notification:42",
+                destination = NotificationDestination.TIME_LETTER,
+                serverNotificationId = 42L,
+                serverData = mapOf("destination" to "TIME_LETTER_DETAIL", "timeLetterId" to "12", "unexpected" to "x"),
+            )
+
+        val request = NotificationIntentContract.fromIntent(shadowOf(pendingIntent!!).savedIntent)
+
+        assertEquals(mapOf("destination" to "TIME_LETTER_DETAIL", "timeLetterId" to "12"), request?.serverData)
+    }
+
+    @Test
+    fun `알림함 진입은 누를 때마다 새 발생이다`() {
+        val data = mapOf("destination" to "RECEIVER_LIST")
+        val first = NotificationEntryRequest.fromInbox(notificationId = 7L, data = data)
+        val second = NotificationEntryRequest.fromInbox(notificationId = 7L, data = data)
+
+        assertEquals(NotificationEntrySource.INBOX, first.source)
+        assertEquals(7L, first.serverNotificationId)
+        assertNotEquals(first.identityKey, second.identityKey)
+    }
+
+    @Test
+    fun `서버 알림 ID가 없거나 양수가 아니면 앱 알림으로 본다`() {
+        listOf<Long?>(null, 0L, -1L).forEach { serverId ->
+            val intent =
+                notificationIntent().apply {
+                    serverId?.let { putExtra(NotificationPendingIntentFactory.EXTRA_NOTIFICATION_SERVER_ID, it) }
+                }
+
+            assertNull("server id '$serverId'", NotificationIntentContract.fromIntent(intent)?.serverNotificationId)
+        }
     }
 
     private fun notificationIntent(

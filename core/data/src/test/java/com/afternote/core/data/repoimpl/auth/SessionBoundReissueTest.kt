@@ -10,6 +10,8 @@ import com.afternote.core.datastore.StoreScope
 import com.afternote.core.datastore.TokenDataSource
 import com.afternote.core.domain.error.SessionChangedException
 import com.afternote.core.domain.push.DevicePushTargetProvider
+import com.afternote.core.domain.push.PushPermission
+import com.afternote.core.domain.push.PushRegistration
 import com.afternote.core.domain.repository.push.PushTargetRepository
 import com.afternote.core.network.dto.LoginDto
 import com.afternote.core.network.dto.LoginRequestDto
@@ -313,13 +315,24 @@ private object LogoutOnlyAuthApiService : AuthApiService {
 }
 
 private object NoopPushTargetRepository : PushTargetRepository {
-    override suspend fun register(targetId: String): Result<Unit> = error("register 는 이 테스트에서 호출되면 안 됨")
+    override suspend fun register(
+        targetId: String,
+        installationId: String,
+        permission: PushPermission,
+    ): Result<PushRegistration> = error("register 는 이 테스트에서 호출되면 안 됨")
 
     override suspend fun unregister(targetId: String): Result<Unit> = Result.success(Unit)
+
+    override suspend fun reportPermission(
+        installationId: String,
+        permission: PushPermission,
+    ): Result<Unit> = Result.success(Unit)
 }
 
 private object NoDevicePushTargetProvider : DevicePushTargetProvider {
     override suspend fun currentTargetId(): String? = error("currentTargetId 는 이 테스트에서 호출되면 안 됨")
 
     override suspend fun existingTargetId(): String? = null
+
+    override suspend fun resetTargetId(): String? = error("resetTargetId 는 이 테스트에서 호출되면 안 됨")
 }

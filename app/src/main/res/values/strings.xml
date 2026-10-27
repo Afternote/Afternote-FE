@@ -3,6 +3,11 @@
     <string name="fcm_notification_channel_id" translatable="false">afternote_fcm</string>
     <string name="fcm_notification_channel_name">애프터노트 알림</string>
     <string name="fcm_notification_fallback_title" translatable="false">AFTERNOTE</string>
+    <string name="notification_target_deleted_message">삭제된 항목이에요</string>
+    <string name="entry_notice_procedure_cancelled">앱을 열어 주셔서 보관 확인 절차를 취소했어요</string>
+    <string name="entry_notice_easy_questions_title">다시 오셨네요</string>
+    <string name="entry_notice_easy_questions_subtitle">가볍게 하나 골라 적어 볼까요?</string>
+    <string name="entry_notice_easy_questions_later">다음에 할게요</string>
     <string name="notification_permission_denied_message">알림이 꺼져 있어 새로운 소식을 받을 수 없어요</string>
     <string name="notification_permission_denied_action">설정</string>
     <string name="force_update_message">새로운 버전이 나왔어요.\n업데이트 후 이용해 주세요.</string>

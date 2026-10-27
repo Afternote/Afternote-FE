@@ -1,7 +1,9 @@
 package com.afternote.feature.setting.data.di
 
+import com.afternote.feature.setting.data.NotificationPreferenceRepositoryImpl
 import com.afternote.feature.setting.data.SettingAccountRepositoryImpl
 import com.afternote.feature.setting.data.SettingNotificationRepositoryImpl
+import com.afternote.feature.setting.domain.NotificationPreferenceRepository
 import com.afternote.feature.setting.domain.SettingAccountRepository
 import com.afternote.feature.setting.domain.SettingNotificationRepository
 import dagger.Binds
@@ -22,4 +24,19 @@ internal abstract class SettingUserRepositoryModule {
 
     @Binds
     internal abstract fun bindSettingNotificationRepository(impl: SettingNotificationRepositoryImpl): SettingNotificationRepository
+}
+
+/**
+ * 서버 알림 설정 저장소 바인딩 (#2321).
+ *
+ * [SettingUserRepositoryModule] 과 따로 둔다 — 앱 계측 테스트가 그 모듈을 대역으로 통째로 갈아 끼우므로,
+ * 거기 함께 두면 대역을 쓰는 테스트 그래프에서 이 바인딩까지 빠진다.
+ */
+@Module
+@InstallIn(SingletonComponent::class)
+internal abstract class NotificationPreferenceRepositoryModule {
+    @Binds
+    internal abstract fun bindNotificationPreferenceRepository(
+        impl: NotificationPreferenceRepositoryImpl,
+    ): NotificationPreferenceRepository
 }

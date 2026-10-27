@@ -1,15 +1,18 @@
 package com.afternote.feature.home.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -130,74 +133,128 @@ fun HomeTabScreen(
     actions: HomeTabActions = HomeTabActionsNoop,
     // 프리뷰·스크린샷 테스트가 고정 날짜를 주입할 수 있도록 파라미터로 노출한다.
     todayDateText: String = LocalDate.now().format(homeTabDateFormatter),
+    // 서버 알림(#2321). 알림함 진입이 없으면 탑바에 아이콘을 그리지 않는다.
+    onNotificationClick: (() -> Unit)? = null,
+    hasUnreadNotification: Boolean = false,
+    // 기기 알림이 꺼져 있을 때만 non-null 이다. 누르면 시스템 알림 설정을 연다.
+    onTurnOnNotificationClick: (() -> Unit)? = null,
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = { HomeTopBar(onSettingClick = actions::onSettingClick) },
+        topBar = {
+            HomeTopBar(
+                onSettingClick = actions::onSettingClick,
+                onNotificationClick = onNotificationClick,
+                hasUnreadNotification = hasUnreadNotification,
+            )
+        },
         containerColor = Color.Transparent,
     ) { paddingValues ->
-        PullToRefreshBox(
-            isRefreshing = uiState.showsRefreshIndicator,
-            onRefresh = actions::onRetryLoad,
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-        ) {
-            when (uiState) {
-                is HomeTabUiState.Loading -> {
-                    HomeTabScrollContent(
-                        userName = uiState.cachedUserName ?: "\u2026",
-                        // 조회 전이다 — 지정 여부를 결과로 확정하지 않는다 (#698).
-                        recipientBadgeState = RecipientDesignationBadgeState.Unknown,
-                        // 조회 전에는 아는 값이 없다 — 0 을 채워 넣지 않는다 (#700).
-                        todayDateText = todayDateText,
-                        todayQuestionContent = null,
-                        isQuestionLoading = true,
-                        // 조회 전이다 — 0 을 넣으면 «이번 주 기록 없음» 을 확정한다 (#562).
-                        weeklyRecordCount = null,
-                        actions = actions,
-                    )
-                }
+        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            if (onTurnOnNotificationClick != null) {
+                NotificationOffBanner(onClick = onTurnOnNotificationClick)
+            }
+            HomeTabBody(uiState = uiState, actions = actions, todayDateText = todayDateText)
+        }
+    }
+}
 
-                is HomeTabUiState.Success -> {
-                    HomeTabScrollContent(
-                        userName = uiState.userName,
-                        recipientBadgeState =
-                            if (uiState.isRecipientDesignated) {
-                                RecipientDesignationBadgeState.Completed
-                            } else {
-                                RecipientDesignationBadgeState.Incomplete(onClick = actions::onRecipientChipClick)
-                            },
-                        todayDateText = todayDateText,
-                        todayQuestionContent = uiState.todayQuestionContent,
-                        isQuestionLoading = false,
-                        weeklyRecordCount = uiState.weeklyRecordCount,
-                        actions = actions,
-                    )
-                }
+/**
+ * 기기 알림이 꺼진 사용자에게 켜는 길을 알린다 (#2321). 서버는 권한이 거부된 기기에 푸시를 보내지 않으므로
+ * 기록 알림·전달 완료 소식이 이 기기에는 오지 않는다.
+ */
+@Composable
+private fun NotificationOffBanner(onClick: () -> Unit) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .background(AfternoteDesign.colors.gray2, RoundedCornerShape(8.dp))
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.home_notification_off_banner),
+            style = AfternoteDesign.typography.captionLargeR,
+            color = AfternoteDesign.colors.gray7,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(onClick = onClick) {
+            Text(
+                text = stringResource(R.string.home_notification_off_banner_action),
+                style = AfternoteDesign.typography.captionLargeB,
+                color = AfternoteDesign.colors.gray9,
+            )
+        }
+    }
+}
 
-                is HomeTabUiState.Error -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        item {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HomeTabBody(
+    uiState: HomeTabUiState,
+    actions: HomeTabActions,
+    todayDateText: String,
+) {
+    PullToRefreshBox(
+        isRefreshing = uiState.showsRefreshIndicator,
+        onRefresh = actions::onRetryLoad,
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        when (uiState) {
+            is HomeTabUiState.Loading -> {
+                HomeTabScrollContent(
+                    userName = uiState.cachedUserName ?: "\u2026",
+                    // 조회 전이다 — 지정 여부를 결과로 확정하지 않는다 (#698).
+                    recipientBadgeState = RecipientDesignationBadgeState.Unknown,
+                    // 조회 전에는 아는 값이 없다 — 0 을 채워 넣지 않는다 (#700).
+                    todayDateText = todayDateText,
+                    todayQuestionContent = null,
+                    isQuestionLoading = true,
+                    // 조회 전이다 — 0 을 넣으면 «이번 주 기록 없음» 을 확정한다 (#562).
+                    weeklyRecordCount = null,
+                    actions = actions,
+                )
+            }
+
+            is HomeTabUiState.Success -> {
+                HomeTabScrollContent(
+                    userName = uiState.userName,
+                    recipientBadgeState =
+                        if (uiState.isRecipientDesignated) {
+                            RecipientDesignationBadgeState.Completed
+                        } else {
+                            RecipientDesignationBadgeState.Incomplete(onClick = actions::onRecipientChipClick)
+                        },
+                    todayDateText = todayDateText,
+                    todayQuestionContent = uiState.todayQuestionContent,
+                    isQuestionLoading = false,
+                    weeklyRecordCount = uiState.weeklyRecordCount,
+                    actions = actions,
+                )
+            }
+
+            is HomeTabUiState.Error -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    item {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = stringResource(R.string.home_tab_error_message),
+                                style = AfternoteDesign.typography.bodySmallR,
+                                color = AfternoteDesign.colors.gray7,
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            TextButton(onClick = actions::onRetryLoad) {
                                 Text(
-                                    text = stringResource(R.string.home_tab_error_message),
-                                    style = AfternoteDesign.typography.bodySmallR,
-                                    color = AfternoteDesign.colors.gray7,
+                                    text = stringResource(R.string.home_tab_retry),
+                                    style = AfternoteDesign.typography.captionLargeB,
+                                    color = AfternoteDesign.colors.gray9,
                                 )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                TextButton(onClick = actions::onRetryLoad) {
-                                    Text(
-                                        text = stringResource(R.string.home_tab_retry),
-                                        style = AfternoteDesign.typography.captionLargeB,
-                                        color = AfternoteDesign.colors.gray9,
-                                    )
-                                }
                             }
                         }
                     }

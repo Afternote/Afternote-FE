@@ -148,7 +148,7 @@ adb -s <serial> shell dumpsys package com.afternote.afternote_fe | grep lastUpda
 반대로 OS 버전 매트릭스는 지금 단계에서 얻는 게 거의 없다.
 
 - `Build.VERSION.SDK_INT` 분기가 저장소 전체에 0건이다
-- 알림 권한은 `DailyNotificationWorker` 가 런타임에 확인한다
+- 알림 권한은 `AfternoteFirebaseMessagingService` 가 게시 직전에 런타임으로 확인한다
 
 제조사 다양화도 마찬가지로 미룬다. 다만 아래 두 가지는 출시 전에 한 번은 해야 한다.
 

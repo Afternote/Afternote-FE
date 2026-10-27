@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.navigation.NavController
 import com.afternote.core.ui.Route
+import com.afternote.core.ui.SettingStart
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.navigation.AfternoteExternalActions
 import com.afternote.feature.home.presentation.HomeTabActions
@@ -179,7 +180,7 @@ fun rememberHomeTabActions(
                 //
                 // 목적지가 등록인지 목록인지는 기획 확정 전이다 (#506) — docs/qa/assumptions.md 참고.
                 // 등록 화면은 설정 로컬 스택 안에 있어 host 에 시작점으로 알린다 (#1695).
-                appState.navigate(Route.Setting(startWithRecipientRegistration = true))
+                appState.navigate(Route.Setting(start = SettingStart.RECIPIENT_REGISTRATION))
             }
 
             override fun onAnswerClick() {

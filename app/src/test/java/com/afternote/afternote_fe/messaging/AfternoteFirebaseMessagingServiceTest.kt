@@ -4,7 +4,9 @@ import android.Manifest
 import android.app.Application
 import android.app.Notification
 import android.app.NotificationManager
+import android.content.Intent
 import android.os.Bundle
+import com.afternote.core.common.notification.NotificationPendingIntentFactory
 import com.google.firebase.messaging.RemoteMessage
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -107,6 +109,62 @@ class AfternoteFirebaseMessagingServiceTest {
 
         assertEquals(2, postedNotifications().size)
     }
+
+    @Test
+    fun `서버 data-only 알림은 목적지와 서버 알림 ID를 탭 Intent에 싣는다`() {
+        service.onMessageReceived(
+            remoteMessage(
+                data =
+                    mapOf(
+                        "schemaVersion" to "1",
+                        "title" to "AfterNote",
+                        "body" to "예약하신 편지가 곧 전달돼요",
+                        "destination" to "TIME_LETTER_DETAIL",
+                        "timeLetterId" to "123",
+                        "action" to "EDIT",
+                        "notificationId" to "42",
+                    ),
+            ),
+        )
+
+        assertEquals("AfterNote", contentTitleOfSingleNotification())
+        val intent = contentIntentOfSingleNotification()
+        assertEquals("time_letter", intent.getStringExtra(NotificationPendingIntentFactory.EXTRA_NOTIFICATION_DESTINATION))
+        assertEquals(42L, intent.getLongExtra(NotificationPendingIntentFactory.EXTRA_NOTIFICATION_SERVER_ID, 0L))
+        val serverData = intent.getBundleExtra(NotificationPendingIntentFactory.EXTRA_NOTIFICATION_SERVER_DATA)!!
+        assertEquals("TIME_LETTER_DETAIL", serverData.getString("destination"))
+        assertEquals("123", serverData.getString("timeLetterId"))
+        assertEquals("EDIT", serverData.getString("action"))
+        // 제목·본문처럼 목적지 해석에 쓰지 않는 키는 Intent 에 싣지 않는다.
+        assertEquals(null, serverData.getString("body"))
+    }
+
+    @Test
+    fun `모르는 schemaVersion이면 알림은 보이되 홈으로 연다`() {
+        service.onMessageReceived(
+            remoteMessage(
+                data = mapOf("schemaVersion" to "2", "title" to "제목", "destination" to "TIME_LETTER_DETAIL"),
+            ),
+        )
+
+        val intent = contentIntentOfSingleNotification()
+        assertEquals("home", intent.getStringExtra(NotificationPendingIntentFactory.EXTRA_NOTIFICATION_DESTINATION))
+    }
+
+    @Test
+    fun `같은 서버 알림 ID는 message id가 달라도 하나로 합쳐진다`() {
+        service.onMessageReceived(
+            remoteMessage(messageId = "message-1", data = mapOf("title" to "첫 번째", "notificationId" to "42")),
+        )
+        service.onMessageReceived(
+            remoteMessage(messageId = "message-2", data = mapOf("title" to "재전송", "notificationId" to "42")),
+        )
+
+        assertEquals(1, postedNotifications().size)
+        assertEquals("재전송", contentTitleOfSingleNotification())
+    }
+
+    private fun contentIntentOfSingleNotification(): Intent = shadowOf(singleNotification().contentIntent).savedIntent
 
     private fun postedNotifications(): List<Notification> {
         val manager = RuntimeEnvironment.getApplication().getSystemService(NotificationManager::class.java)

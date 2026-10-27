@@ -52,6 +52,9 @@ import kotlinx.coroutines.launch
 internal fun NotificationSettingScreen(
     onBack: () -> Unit,
     onPushNotificationClick: () -> Unit,
+    onNotificationPreferenceClick: () -> Unit,
+    onDelegateClick: () -> Unit,
+    onAnniversaryClick: () -> Unit,
     viewModel: PushNotificationViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -111,6 +114,9 @@ internal fun NotificationSettingScreen(
         snackbarHostState = snackbarHostState,
         onBack = onBack,
         onPushNotificationClick = onPushNotificationClick,
+        onNotificationPreferenceClick = onNotificationPreferenceClick,
+        onDelegateClick = onDelegateClick,
+        onAnniversaryClick = onAnniversaryClick,
         onDeviceAlarmClick = {
             val permissionGranted =
                 ContextCompat.checkSelfPermission(
@@ -139,6 +145,9 @@ private fun NotificationSettingContent(
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
     onPushNotificationClick: () -> Unit,
+    onNotificationPreferenceClick: () -> Unit,
+    onDelegateClick: () -> Unit,
+    onAnniversaryClick: () -> Unit,
     onDeviceAlarmClick: () -> Unit,
     onMarketingConsentChange: (MarketingConsent, Boolean) -> Unit,
 ) {
@@ -197,6 +206,20 @@ private fun NotificationSettingContent(
                     onPushCheck = { onMarketingConsentChange(MarketingConsent.PUSH, it) },
                 )
             }
+            // 서버 알림 설정(#2321)은 기기 알림이 꺼져 있어도 고칠 수 있다 — 대리인·기념일은 푸시가 아니어도
+            // 알림함과 알림톡으로 쓰인다.
+            SettingMenuItem(
+                label = stringResource(R.string.setting_notification_preference_menu),
+                onClick = onNotificationPreferenceClick,
+            )
+            SettingMenuItem(
+                label = stringResource(R.string.setting_delegate_menu),
+                onClick = onDelegateClick,
+            )
+            SettingMenuItem(
+                label = stringResource(R.string.setting_anniversary_menu),
+                onClick = onAnniversaryClick,
+            )
         }
     }
 }

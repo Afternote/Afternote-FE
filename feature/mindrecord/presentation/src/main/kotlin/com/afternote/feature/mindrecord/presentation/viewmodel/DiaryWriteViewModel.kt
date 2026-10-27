@@ -63,6 +63,8 @@ class DiaryWriteViewModel
             // 이어쓰기든 정식 기록 수정이든 덮어쓸 원본이 있다 — 프리필 가드는 둘을 함께 본다 (#2027).
             if (editingDiaryId != null) {
                 _uiState.update { it.copy(isEditingExistingRecord = true) }
+            } else {
+                route.prefillTitle?.takeIf(String::isNotBlank)?.let { title -> _uiState.update { it.copy(title = title) } }
             }
             loadReceivers()
             loadDraftCount()

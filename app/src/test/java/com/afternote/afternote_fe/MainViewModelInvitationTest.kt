@@ -1,6 +1,10 @@
 package com.afternote.afternote_fe
 
 import androidx.lifecycle.SavedStateHandle
+import com.afternote.core.domain.repository.notification.NotificationEntry
+import com.afternote.core.domain.repository.notification.NotificationInbox
+import com.afternote.core.domain.repository.notification.NotificationRepository
+import com.afternote.core.domain.repository.notification.NotificationTarget
 import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.domain.testing.FakePendingReceiverInvitationStore
 import kotlinx.coroutines.Dispatchers
@@ -112,6 +116,7 @@ class MainViewModelInvitationTest {
             MainViewModel(
                 authRepository = auth,
                 pendingInvitationStore = store,
+                notificationRepository = UnusedNotificationRepository,
                 savedStateHandle = savedStateHandle,
             )
 
@@ -124,4 +129,16 @@ class MainViewModelInvitationTest {
     private companion object {
         const val TOKEN = "abcDEF123_-token"
     }
+}
+
+/** 초대 경로는 알림 목적지를 묻지 않는다. 불리면 그 자체가 회귀다. */
+private object UnusedNotificationRepository : NotificationRepository {
+    override suspend fun target(notificationId: Long): Result<NotificationTarget> = error("target 은 이 테스트에서 호출되면 안 됨")
+
+    override suspend fun markRead(notificationId: Long): Result<Unit> = error("markRead 는 이 테스트에서 호출되면 안 됨")
+
+    override suspend fun inbox(): Result<NotificationInbox> = error("inbox 는 이 테스트에서 호출되면 안 됨")
+
+    // 로그인 상태로 만든 픽스처는 진입 보고를 한 번 보낸다. 초대 경로와 무관하므로 비어 있는 결과를 준다.
+    override suspend fun reportEntry(): Result<NotificationEntry> = Result.success(NotificationEntry(emptyList(), false))
 }
