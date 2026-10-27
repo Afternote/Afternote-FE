@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -94,10 +95,12 @@ fun TimeLetterBlockItem(
                     )
                     Spacer(modifier = Modifier.width(43.dp))
                     Box {
-                        Image(
-                            painterResource(com.afternote.feature.timeletter.presentation.R.drawable.setting),
+                        // 드로어블의 채움 #9E9E9E(2.57:1)·테두리 #757575(4.41:1)를 tint 로 gray5 토큰(4.89:1)에 맞춘다 (#2007).
+                        Icon(
+                            painter = painterResource(com.afternote.feature.timeletter.presentation.R.drawable.setting),
                             contentDescription = "더보기 설정",
                             modifier = Modifier.clickable { showMenu = true },
+                            tint = AfternoteDesign.colors.gray5,
                         )
                         DropdownMenu(
                             expanded = showMenu,
