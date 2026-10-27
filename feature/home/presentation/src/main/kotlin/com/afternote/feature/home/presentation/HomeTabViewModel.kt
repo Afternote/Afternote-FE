@@ -3,8 +3,8 @@ package com.afternote.feature.home.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserProfileCacheRepository
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.feature.home.presentation.reporting.HomeFailureStage
 import com.afternote.feature.home.presentation.reporting.recordHomeFailure
 import com.afternote.feature.home.presentation.usecase.GetHomeSummaryUseCase

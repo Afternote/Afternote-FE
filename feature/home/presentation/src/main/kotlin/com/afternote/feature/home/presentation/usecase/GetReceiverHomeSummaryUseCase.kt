@@ -1,6 +1,6 @@
 package com.afternote.feature.home.presentation.usecase
 
-import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.result.runCatchingCancellable
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
 import com.afternote.feature.receiver.domain.model.AfterNotesListResult
