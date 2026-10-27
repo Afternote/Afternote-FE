@@ -1,6 +1,9 @@
 package com.afternote.core.network.service
 
 import com.afternote.core.network.dto.DeletePushTokenRequestDto
+import com.afternote.core.network.dto.NotificationTargetDto
+import com.afternote.core.network.dto.PushInstallationDto
+import com.afternote.core.network.dto.PushInstallationRequestDto
 import com.afternote.core.network.dto.PushTokenDto
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
@@ -99,6 +102,24 @@ interface UserApiService {
     @HTTP(method = "DELETE", path = "users/push-tokens", hasBody = true)
     suspend fun deletePushToken(
         @Body request: DeletePushTokenRequestDto,
+    ): BaseResponse<Unit>
+
+    /** 설치별 OS 알림 권한 보고 (#2321). 앱 실행·권한 변경 때 부른다. FCM 토큰이 없어도 된다. */
+    @PUT("users/push-installations")
+    suspend fun reportPushInstallation(
+        @Body request: PushInstallationRequestDto,
+    ): BaseResponse<PushInstallationDto>
+
+    /** 알림을 탭한 시점의 현재 목적지 (#2321). 지워진 대상이면 목록과 안내 문구를 준다. */
+    @GET("users/notifications/{id}/target")
+    suspend fun getNotificationTarget(
+        @Path("id") notificationId: Long,
+    ): BaseResponse<NotificationTargetDto>
+
+    /** 본인 알림 읽음 처리 (#2321). */
+    @PATCH("users/notifications/{id}/read")
+    suspend fun markNotificationRead(
+        @Path("id") notificationId: Long,
     ): BaseResponse<Unit>
 
     // 푸시 알림 설정 조회

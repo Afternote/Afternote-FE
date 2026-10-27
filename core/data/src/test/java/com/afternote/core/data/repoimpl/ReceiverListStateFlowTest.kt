@@ -5,6 +5,9 @@ import com.afternote.core.domain.model.ReceiverListState
 import com.afternote.core.domain.repository.UserReceiverRepository
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.network.dto.DeletePushTokenRequestDto
+import com.afternote.core.network.dto.NotificationTargetDto
+import com.afternote.core.network.dto.PushInstallationDto
+import com.afternote.core.network.dto.PushInstallationRequestDto
 import com.afternote.core.network.dto.PushTokenDto
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
@@ -434,6 +437,13 @@ class ReceiverListStateFlowTest {
         override suspend fun registerPushToken(request: RegisterPushTokenRequestDto): BaseResponse<PushTokenDto> = TODO("이 테스트 미사용")
 
         override suspend fun deletePushToken(request: DeletePushTokenRequestDto): BaseResponse<Unit> = TODO("이 테스트 미사용")
+
+        override suspend fun reportPushInstallation(request: PushInstallationRequestDto): BaseResponse<PushInstallationDto> =
+            TODO("이 테스트 미사용")
+
+        override suspend fun getNotificationTarget(notificationId: Long): BaseResponse<NotificationTargetDto> = TODO("이 테스트 미사용")
+
+        override suspend fun markNotificationRead(notificationId: Long): BaseResponse<Unit> = TODO("이 테스트 미사용")
 
         override suspend fun getMyPushSettings(): BaseResponse<UserPushSettingDto> = TODO("이 테스트 미사용")
 

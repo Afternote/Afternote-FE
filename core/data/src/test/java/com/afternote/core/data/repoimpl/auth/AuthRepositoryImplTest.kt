@@ -8,6 +8,7 @@ import com.afternote.core.datastore.StoreScope
 import com.afternote.core.datastore.TokenDataSource
 import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.push.DevicePushTargetProvider
+import com.afternote.core.domain.push.PushPermission
 import com.afternote.core.domain.repository.push.PushTargetRepository
 import com.afternote.core.network.dto.LoginDto
 import com.afternote.core.network.dto.LoginRequestDto
@@ -579,12 +580,20 @@ private class FakePushTargetRepository(
 ) : PushTargetRepository {
     val unregistered = mutableListOf<String>()
 
-    override suspend fun register(targetId: String): Result<Unit> =
-        if (failing) Result.failure(IllegalStateException("등록 실패")) else Result.success(Unit)
+    override suspend fun register(
+        targetId: String,
+        installationId: String,
+        permission: PushPermission,
+    ): Result<Unit> = if (failing) Result.failure(IllegalStateException("등록 실패")) else Result.success(Unit)
 
     override suspend fun unregister(targetId: String): Result<Unit> {
         unregistered += targetId
         onUnregister()
         return if (failing) Result.failure(IllegalStateException("해제 실패")) else Result.success(Unit)
     }
+
+    override suspend fun reportPermission(
+        installationId: String,
+        permission: PushPermission,
+    ): Result<Unit> = Result.success(Unit)
 }

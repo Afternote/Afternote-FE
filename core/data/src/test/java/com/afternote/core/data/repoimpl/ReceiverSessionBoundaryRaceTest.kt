@@ -5,6 +5,7 @@ import com.afternote.core.data.repoimpl.auth.AuthRepositoryImpl
 import com.afternote.core.datastore.LocalStoreRegistry
 import com.afternote.core.datastore.StoreScope
 import com.afternote.core.domain.push.DevicePushTargetProvider
+import com.afternote.core.domain.push.PushPermission
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.repository.push.PushTargetRepository
 import com.afternote.core.model.user.Receiver
@@ -12,6 +13,9 @@ import com.afternote.core.network.dto.DeletePushTokenRequestDto
 import com.afternote.core.network.dto.LoginDto
 import com.afternote.core.network.dto.LoginRequestDto
 import com.afternote.core.network.dto.LogoutRequestDto
+import com.afternote.core.network.dto.NotificationTargetDto
+import com.afternote.core.network.dto.PushInstallationDto
+import com.afternote.core.network.dto.PushInstallationRequestDto
 import com.afternote.core.network.dto.PushTokenDto
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
@@ -507,9 +511,18 @@ class ReceiverSessionBoundaryRaceTest {
                 },
             pushTargetRepository =
                 object : PushTargetRepository {
-                    override suspend fun register(targetId: String): Result<Unit> = error("register 는 이 테스트에서 호출되면 안 됨")
+                    override suspend fun register(
+                        targetId: String,
+                        installationId: String,
+                        permission: PushPermission,
+                    ): Result<Unit> = error("register 는 이 테스트에서 호출되면 안 됨")
 
                     override suspend fun unregister(targetId: String): Result<Unit> = Result.success(Unit)
+
+                    override suspend fun reportPermission(
+                        installationId: String,
+                        permission: PushPermission,
+                    ): Result<Unit> = Result.success(Unit)
                 },
             devicePushTargetProvider =
                 object : DevicePushTargetProvider {
@@ -583,6 +596,13 @@ class ReceiverSessionBoundaryRaceTest {
         override suspend fun registerPushToken(request: RegisterPushTokenRequestDto): BaseResponse<PushTokenDto> = TODO("이 테스트 미사용")
 
         override suspend fun deletePushToken(request: DeletePushTokenRequestDto): BaseResponse<Unit> = TODO("이 테스트 미사용")
+
+        override suspend fun reportPushInstallation(request: PushInstallationRequestDto): BaseResponse<PushInstallationDto> =
+            TODO("이 테스트 미사용")
+
+        override suspend fun getNotificationTarget(notificationId: Long): BaseResponse<NotificationTargetDto> = TODO("이 테스트 미사용")
+
+        override suspend fun markNotificationRead(notificationId: Long): BaseResponse<Unit> = TODO("이 테스트 미사용")
 
         override suspend fun getReceiverDetail(receiverId: Long): BaseResponse<ReceiverDetailDto> = TODO("이 테스트 미사용")
 

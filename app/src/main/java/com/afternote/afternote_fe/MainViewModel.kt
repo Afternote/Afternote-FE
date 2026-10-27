@@ -4,8 +4,11 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.afternote_fe.notification.NotificationEntryRequest
+import com.afternote.afternote_fe.notification.NotificationEntryResolution
+import com.afternote.afternote_fe.notification.ServerNotificationDestination
 import com.afternote.core.domain.repository.PendingReceiverInvitationStore
 import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.core.domain.repository.notification.NotificationRepository
 import com.afternote.core.ui.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +19,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 
 @HiltViewModel
@@ -24,6 +28,7 @@ class MainViewModel
     constructor(
         authRepository: AuthRepository,
         private val pendingInvitationStore: PendingReceiverInvitationStore,
+        private val notificationRepository: NotificationRepository,
         private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
         private val pendingNotificationEntryState = MutableStateFlow<NotificationEntryRequest?>(null)
@@ -130,7 +135,32 @@ class MainViewModel
             pendingNotificationEntryState.value = null
         }
 
+        /**
+         * 알림 진입이 지금 열어야 할 곳을 정한다 (#2321).
+         *
+         * 서버 알림이면 탭한 시점의 목적지를 서버에 다시 묻는다 — 대상이 지워졌거나 이미 답한 질문일 수
+         * 있다. 묻지 못하면(네트워크·시간 초과·오류) 알림이 싣고 온 목적지로 연다. 알림을 눌렀는데 아무
+         * 데도 안 가는 편이 더 나쁘다. 읽음 처리는 이동을 기다리게 하지 않는다.
+         */
+        internal suspend fun resolveNotificationEntry(request: NotificationEntryRequest): NotificationEntryResolution {
+            val fallback = NotificationEntryResolution(destination = request.destination)
+            val notificationId = request.serverNotificationId ?: return fallback
+
+            viewModelScope.launch { notificationRepository.markRead(notificationId) }
+            val target =
+                withTimeoutOrNull(NOTIFICATION_TARGET_TIMEOUT_MILLIS) {
+                    notificationRepository.target(notificationId).getOrNull()
+                } ?: return fallback
+
+            return NotificationEntryResolution(
+                destination = ServerNotificationDestination.toAppDestination(target.destination),
+                deleted = target.deleted,
+                serverMessage = target.toast,
+            )
+        }
+
         private companion object {
+            const val NOTIFICATION_TARGET_TIMEOUT_MILLIS = 3_000L
             const val CONSUMED_NOTIFICATION_IDENTITY_KEY = "consumed_notification_entry_identity"
             const val SETTLED_INVITATION_TOKEN_KEY = "settled_receiver_invitation_token"
             const val INVITATION_AWAITING_LOGIN_KEY = "receiver_invitation_awaiting_login"

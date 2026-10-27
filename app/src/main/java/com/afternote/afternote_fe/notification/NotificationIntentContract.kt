@@ -25,17 +25,32 @@ internal enum class NotificationEntrySource(
  * [destination]은 화면 이동의 목적지이지 이벤트의 식별자가 아니다. 그래서 [identityKey]에는
  * 들어가지 않는다 — 같은 발생을 다시 게시하며 목적지만 바뀌어도 「이미 소비한 알림」이라는
  * 판정은 유지돼야 한다.
+ *
+ * [serverNotificationId]가 있으면 서버가 만든 알림이다. [destination]은 발송 시점의 목적지라
+ * 탭한 시점의 목적지는 이 ID로 서버에 다시 묻는다 (#2321).
  */
 internal data class NotificationEntryRequest(
     val source: NotificationEntrySource,
     val occurrenceId: String,
     val destination: NotificationDestination,
+    val serverNotificationId: Long? = null,
 ) {
     /** 서로 다른 source가 같은 occurrence 문자열을 사용해도 소비 상태가 충돌하지 않는 내부 키. */
     val identityKey: String =
         "${source.contractValue.length}:${source.contractValue}:" +
             "${occurrenceId.length}:$occurrenceId"
 }
+
+/**
+ * 알림 진입을 처리한 결과 — 열 목적지와, 대상이 지워졌을 때의 안내.
+ *
+ * @property serverMessage 서버가 정한 안내 문구. [deleted]인데 이 값이 없으면 앱 기본 문구를 쓴다.
+ */
+internal data class NotificationEntryResolution(
+    val destination: NotificationDestination,
+    val deleted: Boolean = false,
+    val serverMessage: String? = null,
+)
 
 /** [NotificationPendingIntentFactory]가 표시한 앱 직접 생성 알림 진입만 해석한다. */
 internal object NotificationIntentContract {
@@ -57,6 +72,11 @@ internal object NotificationIntentContract {
                 runCatching {
                     intent.getStringExtra(EXTRA_NOTIFICATION_DESTINATION)
                 }.getOrNull(),
+            serverNotificationId =
+                runCatching {
+                    intent.getLongExtra(EXTRA_NOTIFICATION_SERVER_ID, 0L)
+                }.getOrNull()
+                    ?.takeIf { it > 0L },
         )
 
     /**
@@ -70,6 +90,7 @@ internal object NotificationIntentContract {
         rawSource: String?,
         occurrenceId: String?,
         rawDestination: String?,
+        serverNotificationId: Long?,
     ): NotificationEntryRequest? {
         if (!isNotificationEntry) return null
 
@@ -86,6 +107,7 @@ internal object NotificationIntentContract {
             destination =
                 NotificationDestination.fromContractValue(rawDestination)
                     ?: FALLBACK_DESTINATION,
+            serverNotificationId = serverNotificationId,
         )
     }
 
@@ -100,4 +122,6 @@ internal object NotificationIntentContract {
         NotificationPendingIntentFactory.EXTRA_NOTIFICATION_OCCURRENCE_TOKEN
     private const val EXTRA_NOTIFICATION_DESTINATION =
         NotificationPendingIntentFactory.EXTRA_NOTIFICATION_DESTINATION
+    private const val EXTRA_NOTIFICATION_SERVER_ID =
+        NotificationPendingIntentFactory.EXTRA_NOTIFICATION_SERVER_ID
 }

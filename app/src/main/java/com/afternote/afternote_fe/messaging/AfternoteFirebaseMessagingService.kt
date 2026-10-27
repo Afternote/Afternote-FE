@@ -8,6 +8,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.afternote.afternote_fe.R
+import com.afternote.afternote_fe.notification.ServerNotificationDestination
 import com.afternote.core.common.notification.NotificationDestination
 import com.afternote.core.common.notification.NotificationPendingIntentFactory
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -53,6 +54,11 @@ class AfternoteFirebaseMessagingService : FirebaseMessagingService() {
         Log.d(TAG, "FCM installation unregistered")
     }
 
+    /**
+     * 서버는 Android 로 notification 블록 없이 data-only 로 보낸다 (BE `NOTIFICATION_CONTRACT.md`).
+     * 그래서 백그라운드·종료 상태에서도 이 콜백이 불리고 앱이 알림을 직접 그린다 — 그래야 탭이
+     * [NotificationPendingIntentFactory] 를 거쳐 목적지로 이어진다.
+     */
     override fun onMessageReceived(message: RemoteMessage) {
         val content =
             FcmNotificationContentResolver.resolve(
@@ -62,7 +68,11 @@ class AfternoteFirebaseMessagingService : FirebaseMessagingService() {
                 fallbackTitle = getString(R.string.fcm_notification_fallback_title),
             ) ?: return
 
-        val occurrenceId = FcmNotificationIdentity.occurrenceId(message.messageId)
+        val occurrenceId =
+            FcmNotificationIdentity.occurrenceId(
+                serverNotificationId = content.serverNotificationId,
+                messageId = message.messageId,
+            )
 
         showNotification(
             content = content,
@@ -95,16 +105,13 @@ class AfternoteFirebaseMessagingService : FirebaseMessagingService() {
                         setContentText(body)
                         setStyle(NotificationCompat.BigTextStyle().bigText(body))
                     }
-                    // 목적지 data 키 계약(Afternote/Afternote-BE#261)이 서기 전까지 FCM 은 홈을
-                    // 명시한다. 키를 추측해 두면 BE 가 다른 이름을 고르는 순간 조용히 죽는 분기가
-                    // 남는다 — 계약이 확정되면 여기서 data 를 읽어 NotificationDestination 으로
-                    // 옮긴다.
                     NotificationPendingIntentFactory
                         .create(
                             context = this@AfternoteFirebaseMessagingService,
                             source = NOTIFICATION_SOURCE,
                             occurrenceId = occurrenceId,
-                            destination = NotificationDestination.HOME,
+                            destination = content.destination,
+                            serverNotificationId = content.serverNotificationId,
                         )?.let(::setContentIntent)
                 }.build()
 
@@ -123,18 +130,36 @@ class AfternoteFirebaseMessagingService : FirebaseMessagingService() {
 private data class FcmNotificationContent(
     val title: String,
     val body: String?,
+    val destination: NotificationDestination,
+    val serverNotificationId: Long?,
 )
 
 private object FcmNotificationIdentity {
-    fun occurrenceId(messageId: String?): String =
-        messageId
-            ?.takeIf(String::isNotBlank)
+    /**
+     * 서버 알림 ID 가 있으면 그것이 발생 식별자다 — FCM 이 같은 알림을 두 번 넘겨도 트레이에 한 장만
+     * 남고, 탭 소비 판정도 서버 알림 하나에 한 번이 된다. 없으면 FCM message id, 그것도 없으면 새 UUID.
+     */
+    fun occurrenceId(
+        serverNotificationId: Long?,
+        messageId: String?,
+    ): String =
+        serverNotificationId?.let { "notification:$it" }
+            ?: messageId?.takeIf(String::isNotBlank)
             ?: UUID.randomUUID().toString()
 
     /** NotificationManager의 `(tag, id)` identity를 프로세스 재시작 뒤에도 occurrence별로 유지한다. */
     fun notificationTag(occurrenceId: String): String = "fcm:$occurrenceId"
 }
 
+/**
+ * FCM data v1 계약(BE `PushPayload`)을 읽는다. 모든 값은 문자열이다.
+ *
+ * 제목·본문은 notification 블록이 있으면 그쪽이 우선이다 — 서버는 이제 data 로만 보내지만, 콘솔에서 보낸
+ * 시험 메시지처럼 notification 블록을 단 메시지도 그대로 보여 준다.
+ *
+ * 목적지는 `schemaVersion` 이 이 앱이 아는 값일 때만 따른다. 모르는 판이면 키 뜻이 바뀌었을 수 있어
+ * 홈으로 연다. 알림 자체는 보여 준다 — 사용자에게 안 보이는 쪽이 더 나쁘다.
+ */
 private object FcmNotificationContentResolver {
     fun resolve(
         notificationTitle: String?,
@@ -146,9 +171,21 @@ private object FcmNotificationContentResolver {
         val body = notificationBody.nonBlankOrNull() ?: data[KEY_BODY].nonBlankOrNull()
         if (title == null && body == null) return null
 
+        val schemaVersion = data[KEY_SCHEMA_VERSION].nonBlankOrNull()
+        val knownSchema = schemaVersion == null || schemaVersion == SUPPORTED_SCHEMA_VERSION
+
         return FcmNotificationContent(
             title = title ?: fallbackTitle,
             body = body,
+            destination =
+                ServerNotificationDestination.toAppDestination(
+                    data[KEY_DESTINATION].takeIf { knownSchema },
+                ),
+            serverNotificationId =
+                data[KEY_NOTIFICATION_ID]
+                    .nonBlankOrNull()
+                    ?.toLongOrNull()
+                    ?.takeIf { it > 0L },
         )
     }
 
@@ -156,4 +193,8 @@ private object FcmNotificationContentResolver {
 
     private const val KEY_TITLE = "title"
     private const val KEY_BODY = "body"
+    private const val KEY_SCHEMA_VERSION = "schemaVersion"
+    private const val KEY_DESTINATION = "destination"
+    private const val KEY_NOTIFICATION_ID = "notificationId"
+    private const val SUPPORTED_SCHEMA_VERSION = "1"
 }

@@ -25,6 +25,8 @@ import android.content.Intent
  * @param occurrenceId 같은 출처 안에서 알림 발생을 구분하는 식별자
  * @param destination 탭했을 때 열 최상위 화면. 생산자가 반드시 정한다 — 기본값을 두면 목적지
  *   배선을 빠뜨린 알림이 조용히 홈으로만 떨어진다.
+ * @param serverNotificationId 서버가 만든 알림이면 그 ID. 탭한 뒤 현재 목적지 확인과 읽음 처리에 쓴다.
+ *   앱이 스스로 만든 알림은 null 이다.
  */
 object NotificationPendingIntentFactory {
     const val EXTRA_NOTIFICATION_ENTRY = "com.afternote.notification.ENTRY"
@@ -37,12 +39,14 @@ object NotificationPendingIntentFactory {
      */
     const val EXTRA_NOTIFICATION_OCCURRENCE_TOKEN = "com.afternote.notification.OCCURRENCE_TOKEN"
     const val EXTRA_NOTIFICATION_DESTINATION = "com.afternote.notification.DESTINATION"
+    const val EXTRA_NOTIFICATION_SERVER_ID = "com.afternote.notification.SERVER_ID"
 
     fun create(
         context: Context,
         source: String,
         occurrenceId: String,
         destination: NotificationDestination,
+        serverNotificationId: Long? = null,
     ): PendingIntent? {
         val action = notificationAction(source = source, occurrenceId = occurrenceId)
         val launchIntent =
@@ -53,6 +57,7 @@ object NotificationPendingIntentFactory {
                     putExtra(EXTRA_NOTIFICATION_SOURCE, source)
                     putExtra(EXTRA_NOTIFICATION_OCCURRENCE_TOKEN, occurrenceId)
                     putExtra(EXTRA_NOTIFICATION_DESTINATION, destination.contractValue)
+                    serverNotificationId?.let { putExtra(EXTRA_NOTIFICATION_SERVER_ID, it) }
                     this.action = action
                     addFlags(
                         Intent.FLAG_ACTIVITY_NEW_TASK or

@@ -83,6 +83,35 @@ class NotificationIntentContractTest {
         assertEquals("occurrence-1", request?.occurrenceId)
     }
 
+    @Test
+    fun `서버 알림 ID를 PendingIntent 왕복으로 되읽는다`() {
+        val pendingIntent =
+            NotificationPendingIntentFactory.create(
+                context = RuntimeEnvironment.getApplication(),
+                source = NotificationEntrySource.FCM.contractValue,
+                occurrenceId = "notification:42",
+                destination = NotificationDestination.TIME_LETTER,
+                serverNotificationId = 42L,
+            )
+
+        val request = NotificationIntentContract.fromIntent(shadowOf(pendingIntent!!).savedIntent)
+
+        assertEquals(42L, request?.serverNotificationId)
+        assertEquals(NotificationDestination.TIME_LETTER, request?.destination)
+    }
+
+    @Test
+    fun `서버 알림 ID가 없거나 양수가 아니면 앱 알림으로 본다`() {
+        listOf<Long?>(null, 0L, -1L).forEach { serverId ->
+            val intent =
+                notificationIntent().apply {
+                    serverId?.let { putExtra(NotificationPendingIntentFactory.EXTRA_NOTIFICATION_SERVER_ID, it) }
+                }
+
+            assertNull("server id '$serverId'", NotificationIntentContract.fromIntent(intent)?.serverNotificationId)
+        }
+    }
+
     private fun notificationIntent(
         isNotificationEntry: Boolean = true,
         source: String? = NotificationEntrySource.FCM.contractValue,

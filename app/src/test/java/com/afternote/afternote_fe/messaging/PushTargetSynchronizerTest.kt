@@ -2,6 +2,7 @@ package com.afternote.afternote_fe.messaging
 
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.push.DevicePushTargetProvider
+import com.afternote.core.domain.push.PushPermission
 import com.afternote.core.domain.repository.push.PushTargetRepository
 import com.afternote.core.domain.testing.FakeAuthRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -211,16 +212,123 @@ class PushTargetSynchronizerTest {
             assertEquals("push_target_rotated", errorReporter.failures.single()["stage"])
         }
 
+    @Test
+    fun `로그인하면 설치 ID와 권한을 보고하고 등록에도 같은 값을 싣는다`() =
+        runTest(dispatcher) {
+            val pushTargetRepository = RecordingPushTargetRepository()
+            val synchronizer =
+                synchronizer(
+                    FakeAuthRepository(loggedIn = true, accessToken = "access"),
+                    pushTargetRepository,
+                    deviceTargetId = "fid-1",
+                    permissionReader = FakePushPermissionReader(PushPermission.DENIED),
+                )
+
+            backgroundScope.launch { synchronizer.observeLogin() }
+            advanceUntilIdle()
+
+            assertEquals(listOf(INSTALLATION_ID to PushPermission.DENIED), pushTargetRepository.reports)
+            assertEquals(
+                listOf(Triple("fid-1", INSTALLATION_ID, PushPermission.DENIED)),
+                pushTargetRepository.registrations,
+            )
+        }
+
+    @Test
+    fun `앞으로 나왔을 때 권한이 바뀌었으면 다시 보고하고 다시 등록한다`() =
+        runTest(dispatcher) {
+            val pushTargetRepository = RecordingPushTargetRepository()
+            val permissionReader = FakePushPermissionReader(PushPermission.DENIED)
+            val synchronizer =
+                synchronizer(
+                    FakeAuthRepository(loggedIn = true, accessToken = "access"),
+                    pushTargetRepository,
+                    deviceTargetId = "fid-1",
+                    permissionReader = permissionReader,
+                )
+            backgroundScope.launch { synchronizer.observeLogin() }
+            advanceUntilIdle()
+
+            permissionReader.permission = PushPermission.GRANTED
+            synchronizer.onForeground()
+
+            assertEquals(
+                listOf(INSTALLATION_ID to PushPermission.DENIED, INSTALLATION_ID to PushPermission.GRANTED),
+                pushTargetRepository.reports,
+            )
+            assertEquals(
+                listOf(PushPermission.DENIED, PushPermission.GRANTED),
+                pushTargetRepository.registrations.map { it.third },
+            )
+        }
+
+    @Test
+    fun `앞으로 나왔을 때 권한이 그대로면 서버를 부르지 않는다`() =
+        runTest(dispatcher) {
+            val pushTargetRepository = RecordingPushTargetRepository()
+            val synchronizer =
+                synchronizer(
+                    FakeAuthRepository(loggedIn = true, accessToken = "access"),
+                    pushTargetRepository,
+                    deviceTargetId = "fid-1",
+                )
+            backgroundScope.launch { synchronizer.observeLogin() }
+            advanceUntilIdle()
+
+            synchronizer.onForeground()
+
+            assertEquals(1, pushTargetRepository.reports.size)
+            assertEquals(listOf("fid-1"), pushTargetRepository.registered)
+        }
+
+    @Test
+    fun `로그아웃 상태에서 앞으로 나와도 보고하지 않는다`() =
+        runTest(dispatcher) {
+            val pushTargetRepository = RecordingPushTargetRepository()
+            val synchronizer =
+                synchronizer(
+                    FakeAuthRepository(loggedIn = false, accessToken = null),
+                    pushTargetRepository,
+                    deviceTargetId = "fid-1",
+                )
+
+            synchronizer.onForeground()
+
+            assertTrue(pushTargetRepository.reports.isEmpty())
+        }
+
+    @Test
+    fun `등록이 실패한 식별자는 앞으로 나올 때 다시 시도한다`() =
+        runTest(dispatcher) {
+            val pushTargetRepository = RecordingPushTargetRepository(failRegistrations = 1)
+            val permissionReader = FakePushPermissionReader(PushPermission.GRANTED)
+            val synchronizer =
+                synchronizer(
+                    FakeAuthRepository(loggedIn = true, accessToken = "access"),
+                    pushTargetRepository,
+                    deviceTargetId = "fid-1",
+                    permissionReader = permissionReader,
+                )
+            backgroundScope.launch { synchronizer.observeLogin() }
+            advanceUntilIdle()
+
+            synchronizer.onForeground()
+
+            assertEquals(listOf("fid-1", "fid-1"), pushTargetRepository.registered)
+        }
+
     private fun synchronizer(
         authRepository: FakeAuthRepository,
         pushTargetRepository: PushTargetRepository,
         deviceTargetId: String?,
         errorReporter: ErrorReporter = RecordingErrorReporter(),
+        permissionReader: PushPermissionReader = FakePushPermissionReader(PushPermission.GRANTED),
     ) = synchronizer(
         authRepository = authRepository,
         pushTargetRepository = pushTargetRepository,
         devicePushTargetProvider = FakeDevicePushTargetProvider { deviceTargetId },
         errorReporter = errorReporter,
+        permissionReader = permissionReader,
     )
 
     private fun synchronizer(
@@ -228,12 +336,25 @@ class PushTargetSynchronizerTest {
         pushTargetRepository: PushTargetRepository,
         devicePushTargetProvider: DevicePushTargetProvider,
         errorReporter: ErrorReporter = RecordingErrorReporter(),
+        permissionReader: PushPermissionReader = FakePushPermissionReader(PushPermission.GRANTED),
     ) = PushTargetSynchronizer(
         authRepository = authRepository,
         devicePushTargetProvider = devicePushTargetProvider,
         pushTargetRepository = pushTargetRepository,
+        installationIdStore = FixedPushInstallationIdStore,
+        permissionReader = permissionReader,
         errorReporter = errorReporter,
     )
+
+    private object FixedPushInstallationIdStore : PushInstallationIdStore {
+        override suspend fun installationId(): String = INSTALLATION_ID
+    }
+
+    private class FakePushPermissionReader(
+        var permission: PushPermission,
+    ) : PushPermissionReader {
+        override fun current(): PushPermission = permission
+    }
 
     /** 등록·해제 두 경로가 같은 값을 본다. 던지게 만들려면 [targetId] 가 던지면 된다. */
     private class FakeDevicePushTargetProvider(
@@ -261,17 +382,39 @@ class PushTargetSynchronizerTest {
     }
 
     private class ThrowingPushTargetRepository : PushTargetRepository {
-        override suspend fun register(targetId: String): Result<Unit> = throw IllegalStateException("boom")
+        override suspend fun register(
+            targetId: String,
+            installationId: String,
+            permission: PushPermission,
+        ): Result<Unit> = throw IllegalStateException("boom")
 
         override suspend fun unregister(targetId: String): Result<Unit> = throw IllegalStateException("boom")
+
+        override suspend fun reportPermission(
+            installationId: String,
+            permission: PushPermission,
+        ): Result<Unit> = Result.success(Unit)
     }
 
-    private class RecordingPushTargetRepository : PushTargetRepository {
-        val registered = mutableListOf<String>()
+    private class RecordingPushTargetRepository(
+        private var failRegistrations: Int = 0,
+    ) : PushTargetRepository {
+        val registrations = mutableListOf<Triple<String, String, PushPermission>>()
+        val registered: List<String>
+            get() = registrations.map { it.first }
         val unregistered = mutableListOf<String>()
+        val reports = mutableListOf<Pair<String, PushPermission>>()
 
-        override suspend fun register(targetId: String): Result<Unit> {
-            registered += targetId
+        override suspend fun register(
+            targetId: String,
+            installationId: String,
+            permission: PushPermission,
+        ): Result<Unit> {
+            registrations += Triple(targetId, installationId, permission)
+            if (failRegistrations > 0) {
+                failRegistrations--
+                return Result.failure(IllegalStateException("등록 실패"))
+            }
             return Result.success(Unit)
         }
 
@@ -279,5 +422,17 @@ class PushTargetSynchronizerTest {
             unregistered += targetId
             return Result.success(Unit)
         }
+
+        override suspend fun reportPermission(
+            installationId: String,
+            permission: PushPermission,
+        ): Result<Unit> {
+            reports += installationId to permission
+            return Result.success(Unit)
+        }
+    }
+
+    private companion object {
+        const val INSTALLATION_ID = "d92560f1-ad73-4bfb-8759-017c61ad5168"
     }
 }
