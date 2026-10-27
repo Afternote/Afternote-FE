@@ -6,6 +6,8 @@ import com.afternote.feature.timeletter.domain.model.RecordedAudio
 
 data class TimeLetterWriteUiState(
     val editingTimeLetterId: Long? = null,
+    /** 예약된 편지를 수정 중인지. 이탈 시 임시저장을 권하면 예약이 DRAFT 로 풀리므로 폐기 확인만 묻는다 (#576). */
+    val isEditingScheduledLetter: Boolean = false,
     val isLoadingEditingLetter: Boolean = false,
     val draftTitle: String? = null,
     val draftTextContents: Map<Long, String> = emptyMap(),
