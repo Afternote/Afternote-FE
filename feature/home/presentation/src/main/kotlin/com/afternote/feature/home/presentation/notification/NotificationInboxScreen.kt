@@ -1,6 +1,7 @@
 package com.afternote.feature.home.presentation.notification
 
-import androidx.compose.foundation.background
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -27,9 +27,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -67,108 +68,6 @@ fun NotificationInboxScreen(
             onItemClick(item.id, item.data)
         },
     )
-}
-
-@Composable
-internal fun NotificationInboxContent(
-    uiState: NotificationInboxUiState,
-    onBack: () -> Unit,
-    onRetry: () -> Unit,
-    onItemClick: (NotificationInboxItem) -> Unit,
-) {
-    Scaffold(
-        topBar = { DetailTopBar(title = stringResource(R.string.home_notification_inbox_title), onBackClick = onBack) },
-        containerColor = Color.Transparent,
-    ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            when {
-                uiState.isLoading -> {
-                    CircularProgressIndicator(
-                        color = AfternoteDesign.colors.gray9,
-                        modifier = Modifier.align(Alignment.Center),
-                    )
-                }
-
-                uiState.loadFailed -> {
-                    Column(
-                        modifier = Modifier.align(Alignment.Center),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.home_notification_inbox_load_failed),
-                            style = AfternoteDesign.typography.bodySmallR,
-                            color = AfternoteDesign.colors.gray7,
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        TextButton(onClick = onRetry) {
-                            Text(
-                                text = stringResource(R.string.home_tab_retry),
-                                style = AfternoteDesign.typography.captionLargeB,
-                                color = AfternoteDesign.colors.gray9,
-                            )
-                        }
-                    }
-                }
-
-                uiState.items.isEmpty() -> {
-                    Text(
-                        text = stringResource(R.string.home_notification_inbox_empty),
-                        style = AfternoteDesign.typography.bodyBase,
-                        color = AfternoteDesign.colors.gray5,
-                        modifier = Modifier.align(Alignment.Center),
-                    )
-                }
-
-                else -> {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items(uiState.items, key = NotificationInboxItem::id) { item ->
-                            NotificationInboxRow(item = item, onClick = { onItemClick(item) })
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun NotificationInboxRow(
-    item: NotificationInboxItem,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clickable(role = Role.Button, onClick = onClick)
-                .bottomBorder(color = AfternoteDesign.colors.gray3, width = 1.dp)
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        // 읽지 않은 알림 표시. 읽은 줄도 자리를 비워 두어 글 줄이 흔들리지 않게 한다.
-        Box(
-            modifier =
-                Modifier
-                    .padding(top = 7.dp)
-                    .size(6.dp)
-                    .background(if (item.isRead) Color.Transparent else AfternoteDesign.colors.error, CircleShape),
-        )
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = item.title,
-                style = if (item.isRead) AfternoteDesign.typography.bodyBase else AfternoteDesign.typography.bodyLargeB,
-                color = if (item.isRead) AfternoteDesign.colors.gray6 else AfternoteDesign.colors.gray9,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = item.body,
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray6,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
 }
 
 /**

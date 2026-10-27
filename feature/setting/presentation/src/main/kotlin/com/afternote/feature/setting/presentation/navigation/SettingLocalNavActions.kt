@@ -49,10 +49,6 @@ internal class SettingLocalNavActions(
         backStack.add(SettingRoute.PushNotificationRoute)
     }
 
-    override fun onNotificationPreferenceClick() {
-        backStack.add(SettingRoute.NotificationPreferenceRoute)
-    }
-
     override fun onDelegateClick() {
         backStack.add(SettingRoute.DelegateRoute)
     }

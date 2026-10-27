@@ -142,7 +142,6 @@ class NotificationSettingSignalTest {
                     NotificationSettingScreen(
                         onBack = {},
                         onPushNotificationClick = {},
-                        onNotificationPreferenceClick = {},
                         onDelegateClick = {},
                         onAnniversaryClick = {},
                         viewModel = viewModel,

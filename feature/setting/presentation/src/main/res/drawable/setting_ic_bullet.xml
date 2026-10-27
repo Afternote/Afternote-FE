@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 안내 문구 앞 점 (Figma Ellipse 114). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="4.07894dp"
+    android:height="4dp"
+    android:viewportWidth="4.07894"
+    android:viewportHeight="4">
+  <path
+      android:pathData="M0.0,2.0A2.03947,2.0 0 1,0 4.07894,2.0A2.03947,2.0 0 1,0 0.0,2.0Z"
+      android:fillColor="#212121"/>
+</vector>
