@@ -37,6 +37,8 @@ internal fun PushNotificationContent(
     onMindRecordToggle: (Boolean) -> Unit,
     onAfternoteToggle: (Boolean) -> Unit,
     onRetry: () -> Unit,
+    // 알림 시간 설정(#2321). null 이면 그 구역을 그리지 않는다.
+    timeSection: (@Composable () -> Unit)? = null,
 ) {
     Scaffold(
         topBar = {
@@ -83,6 +85,10 @@ internal fun PushNotificationContent(
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray5,
             )
+            if (timeSection != null) {
+                Spacer(Modifier.height(32.dp))
+                timeSection()
+            }
         }
     }
 }

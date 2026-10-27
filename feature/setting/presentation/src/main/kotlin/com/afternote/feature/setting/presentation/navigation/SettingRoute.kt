@@ -43,10 +43,6 @@ internal sealed interface SettingRoute : NavKey {
     @Serializable
     data object PushNotificationRoute : SettingRoute
 
-    /** 기록 알림 시각·요일·주간 목표 (#2321). */
-    @Serializable
-    data object NotificationPreferenceRoute : SettingRoute
-
     /** 오래 접속하지 않을 때 연락받을 대리인 (#2321). */
     @Serializable
     data object DelegateRoute : SettingRoute

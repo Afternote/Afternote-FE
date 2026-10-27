@@ -45,50 +45,51 @@ class NotificationPreferenceSettingsTest {
     }
 
     @Test
-    fun `기록 알림 - 고친 값을 저장 한 번에 보낸다`() =
+    fun `알림 시간 - 고른 시각만 바꿔 바로 저장하고 나머지 설정은 그대로 보낸다`() =
         runTest(dispatcher) {
             val repository = FakeNotificationPreferenceRepository()
             val viewModel = NotificationPreferenceViewModel(repository)
             advanceUntilIdle()
 
             viewModel.onIntent(NotificationPreferenceIntent.ChangeTime(LocalTime.of(21, 30, 15)))
-            viewModel.onIntent(NotificationPreferenceIntent.ToggleWeekday(DayOfWeek.MONDAY))
-            viewModel.onIntent(NotificationPreferenceIntent.ChangeWeeklyGoal(9))
-            assertTrue(repository.savedPreferences.isEmpty())
-
-            viewModel.onIntent(NotificationPreferenceIntent.Save)
             advanceUntilIdle()
 
-            val saved = repository.savedPreferences.single()
-            assertEquals(LocalTime.of(21, 30), saved.time)
-            assertEquals(DayOfWeek.entries.toSet() - DayOfWeek.MONDAY, saved.weekdays)
-            assertEquals(7, saved.weeklyGoal)
-            assertTrue(viewModel.uiState.value.isSaved)
+            assertEquals(
+                listOf(NotificationPreferences(true, LocalTime.of(21, 30), DayOfWeek.entries.toSet(), 3)),
+                repository.savedPreferences,
+            )
+            assertEquals(
+                LocalTime.of(21, 30),
+                viewModel.uiState.value.preferences
+                    ?.time,
+            )
         }
 
     @Test
-    fun `기록 알림 - 요일을 모두 끄면 보내지 않고 이유를 알린다`() =
+    fun `알림 시간 - 저장이 실패하면 고르기 전 시각으로 되돌리고 알린다`() =
         runTest(dispatcher) {
-            val repository = FakeNotificationPreferenceRepository()
+            val repository = FakeNotificationPreferenceRepository(saveFails = true)
             val viewModel = NotificationPreferenceViewModel(repository)
             advanceUntilIdle()
 
-            DayOfWeek.entries.forEach { viewModel.onIntent(NotificationPreferenceIntent.ToggleWeekday(it)) }
-            viewModel.onIntent(NotificationPreferenceIntent.Save)
+            viewModel.onIntent(NotificationPreferenceIntent.ChangeTime(LocalTime.of(9, 0)))
             advanceUntilIdle()
 
-            assertTrue(repository.savedPreferences.isEmpty())
+            assertEquals(
+                LocalTime.of(18, 0),
+                viewModel.uiState.value.preferences
+                    ?.time,
+            )
             assertNotNull(viewModel.uiState.value.errorMessage)
         }
 
     @Test
-    fun `기록 알림 - 불러오기 전에는 기본값을 그리지 않는다`() =
+    fun `알림 시간 - 불러오기 전에는 시각을 그리지 않는다`() =
         runTest(dispatcher) {
-            val repository = FakeNotificationPreferenceRepository(loadFails = true)
-            val viewModel = NotificationPreferenceViewModel(repository)
+            val viewModel = NotificationPreferenceViewModel(FakeNotificationPreferenceRepository(loadFails = true))
             advanceUntilIdle()
 
-            assertNull(viewModel.uiState.value.form)
+            assertNull(viewModel.uiState.value.preferences)
             assertTrue(viewModel.uiState.value.loadFailed)
         }
 
@@ -162,6 +163,7 @@ class NotificationPreferenceSettingsTest {
 
     private class FakeNotificationPreferenceRepository(
         private val loadFails: Boolean = false,
+        private val saveFails: Boolean = false,
         val anniversaries: MutableList<NotificationAnniversary> = mutableListOf(),
     ) : NotificationPreferenceRepository {
         val savedPreferences = mutableListOf<NotificationPreferences>()
@@ -175,6 +177,7 @@ class NotificationPreferenceSettingsTest {
             }
 
         override suspend fun updatePreferences(preferences: NotificationPreferences): Result<NotificationPreferences> {
+            if (saveFails) return Result.failure(IllegalStateException("offline"))
             savedPreferences += preferences
             return Result.success(preferences)
         }

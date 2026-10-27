@@ -30,7 +30,6 @@ import com.afternote.feature.setting.presentation.notification.NotificationSetti
 import com.afternote.feature.setting.presentation.notification.PushNotificationScreen
 import com.afternote.feature.setting.presentation.notification.anniversary.AnniversaryScreen
 import com.afternote.feature.setting.presentation.notification.delegate.DelegateScreen
-import com.afternote.feature.setting.presentation.notification.preference.NotificationPreferenceScreen
 import com.afternote.feature.setting.presentation.passkey.PassKeyListIntent
 import com.afternote.feature.setting.presentation.passkey.PassKeyListScreen
 import com.afternote.feature.setting.presentation.passkey.PassKeyListViewModel
@@ -162,14 +161,9 @@ public fun SettingNavHost(
                     NotificationSettingScreen(
                         onBack = actions::popBack,
                         onPushNotificationClick = actions::onPushNotificationClick,
-                        onNotificationPreferenceClick = actions::onNotificationPreferenceClick,
                         onDelegateClick = actions::onDelegateClick,
                         onAnniversaryClick = actions::onAnniversaryClick,
                     )
-                }
-
-                entry<SettingRoute.NotificationPreferenceRoute> {
-                    NotificationPreferenceScreen(onBack = actions::popBack)
                 }
 
                 entry<SettingRoute.DelegateRoute> {

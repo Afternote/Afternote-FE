@@ -50,7 +50,7 @@
     <string name="home_receiver_afternote_count_prefix">%1$s개</string>
     <string name="home_receiver_afternote_count_suffix">의 애프터노트가 있습니다.</string>
     <!-- 서버 알림 (#2321) -->
-    <string name="home_notification_inbox_title">알림</string>
+    <string name="home_notification_inbox_title">알람</string>
     <string name="home_notification_inbox_empty">아직 받은 알림이 없어요</string>
     <string name="home_notification_inbox_load_failed">알림을 불러오지 못했어요.</string>
     <string name="home_notification_off_banner">알림이 꺼져 있어 기록 알림과 전달 소식을 받을 수 없어요</string>

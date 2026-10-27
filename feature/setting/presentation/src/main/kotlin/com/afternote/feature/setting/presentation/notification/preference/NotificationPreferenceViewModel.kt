@@ -1,21 +1,19 @@
 package com.afternote.feature.setting.presentation.notification.preference
 
-import androidx.annotation.StringRes
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.ui.UiText
 import com.afternote.core.ui.mvi.MviViewModel
 import com.afternote.feature.setting.domain.NotificationPreferenceRepository
-import com.afternote.feature.setting.domain.NotificationPreferences
 import com.afternote.feature.setting.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * 기록 알림 시각·요일·주간 목표를 고친다 (#2321).
+ * 푸시 알림 화면의 「알림 시간 설정」 (#2321, Figma 설정 - 푸시알림 설정).
  *
- * 값을 바꿀 때마다 저장하지 않고 «저장» 으로 한 번에 보낸다. 서버는 설정이 바뀔 때마다 대기 중인
- * 기록 알림을 취소하고 다시 잡으므로, 시각을 고르는 도중의 값마다 그 일을 시키지 않는다.
+ * 시·분을 고르는 즉시 저장한다 — 시안에 저장 버튼이 없다. 서버 계약은 요일·주간 목표·켜짐도 함께 받으므로
+ * 불러온 값을 그대로 실어 시각만 바꾼다. 저장이 실패하면 고르기 전 시각으로 되돌리고 알린다.
  */
 @HiltViewModel
 internal class NotificationPreferenceViewModel
@@ -32,12 +30,7 @@ internal class NotificationPreferenceViewModel
         override fun onIntent(intent: NotificationPreferenceIntent) {
             when (intent) {
                 NotificationPreferenceIntent.Retry -> load()
-                is NotificationPreferenceIntent.ChangeEnabled -> edit { it.copy(enabled = intent.enabled) }
-                is NotificationPreferenceIntent.ChangeTime -> edit { it.copy(time = intent.time.withSecond(0).withNano(0)) }
-                is NotificationPreferenceIntent.ToggleWeekday -> edit { it.copy(weekdays = it.weekdays.toggle(intent.day)) }
-                is NotificationPreferenceIntent.ChangeWeeklyGoal -> edit { it.copy(weeklyGoal = intent.goal.coerceIn(MIN_GOAL, MAX_GOAL)) }
-                NotificationPreferenceIntent.Save -> save()
-                NotificationPreferenceIntent.ConsumeSaved -> dispatch(NotificationPreferenceReducerEvent.SavedConsumed)
+                is NotificationPreferenceIntent.ChangeTime -> changeTime(intent)
                 NotificationPreferenceIntent.ConsumeError -> dispatch(NotificationPreferenceReducerEvent.ErrorConsumed)
             }
         }
@@ -47,15 +40,33 @@ internal class NotificationPreferenceViewModel
             event: NotificationPreferenceReducerEvent,
         ): NotificationPreferenceUiState =
             when (event) {
-                NotificationPreferenceReducerEvent.Loading -> state.copy(isLoading = true, loadFailed = false)
-                is NotificationPreferenceReducerEvent.Loaded -> state.copy(isLoading = false, form = event.preferences)
-                NotificationPreferenceReducerEvent.LoadFailed -> state.copy(isLoading = false, loadFailed = true)
-                is NotificationPreferenceReducerEvent.Edited -> state.copy(form = event.form)
-                NotificationPreferenceReducerEvent.Saving -> state.copy(isSaving = true, errorMessage = null)
-                is NotificationPreferenceReducerEvent.Saved -> state.copy(isSaving = false, isSaved = true, form = event.preferences)
-                is NotificationPreferenceReducerEvent.Failed -> state.copy(isSaving = false, errorMessage = event.message)
-                NotificationPreferenceReducerEvent.SavedConsumed -> state.copy(isSaved = false)
-                NotificationPreferenceReducerEvent.ErrorConsumed -> state.copy(errorMessage = null)
+                NotificationPreferenceReducerEvent.Loading -> {
+                    state.copy(isLoading = true, loadFailed = false)
+                }
+
+                is NotificationPreferenceReducerEvent.Loaded -> {
+                    state.copy(isLoading = false, preferences = event.preferences)
+                }
+
+                NotificationPreferenceReducerEvent.LoadFailed -> {
+                    state.copy(isLoading = false, loadFailed = true)
+                }
+
+                is NotificationPreferenceReducerEvent.Saving -> {
+                    state.copy(isSaving = true, preferences = event.preferences, errorMessage = null)
+                }
+
+                is NotificationPreferenceReducerEvent.Saved -> {
+                    state.copy(isSaving = false, preferences = event.preferences)
+                }
+
+                is NotificationPreferenceReducerEvent.Failed -> {
+                    state.copy(isSaving = false, preferences = event.previous, errorMessage = event.message)
+                }
+
+                NotificationPreferenceReducerEvent.ErrorConsumed -> {
+                    state.copy(errorMessage = null)
+                }
             }
 
         private fun load() {
@@ -68,41 +79,21 @@ internal class NotificationPreferenceViewModel
             }
         }
 
-        private fun edit(transform: (NotificationPreferences) -> NotificationPreferences) {
-            val form = currentState.form ?: return
+        private fun changeTime(intent: NotificationPreferenceIntent.ChangeTime) {
+            val previous = currentState.preferences ?: return
             if (currentState.isSaving) return
-            dispatch(NotificationPreferenceReducerEvent.Edited(transform(form)))
-        }
-
-        private fun save() {
-            val form = currentState.form ?: return
-            if (currentState.isSaving) return
-            // 알림을 받는 동안 요일이 하나도 없으면 서버가 거부한다. 요청 전에 막아 이유를 알려 준다.
-            if (form.enabled && form.weekdays.isEmpty()) {
-                dispatch(
-                    NotificationPreferenceReducerEvent.Failed(UiText.Resource(R.string.setting_notification_preference_weekday_required)),
-                )
-                return
-            }
-            dispatch(NotificationPreferenceReducerEvent.Saving)
+            val time = intent.time.withSecond(0).withNano(0)
+            if (time == previous.time) return
+            val requested = previous.copy(time = time)
+            dispatch(NotificationPreferenceReducerEvent.Saving(requested))
             viewModelScope.launch {
                 repository
-                    .updatePreferences(form)
+                    .updatePreferences(requested)
                     .onSuccess { dispatch(NotificationPreferenceReducerEvent.Saved(it)) }
                     .onFailure {
-                        dispatch(
-                            NotificationPreferenceReducerEvent.Failed(
-                                UiText.Resource(R.string.setting_notification_preference_save_failed),
-                            ),
-                        )
+                        val message = UiText.Resource(R.string.setting_notification_preference_save_failed)
+                        dispatch(NotificationPreferenceReducerEvent.Failed(previous, message))
                     }
             }
         }
-
-        private companion object {
-            const val MIN_GOAL = 1
-            const val MAX_GOAL = 7
-        }
     }
-
-private fun <T> Set<T>.toggle(value: T): Set<T> = if (value in this) this - value else this + value
