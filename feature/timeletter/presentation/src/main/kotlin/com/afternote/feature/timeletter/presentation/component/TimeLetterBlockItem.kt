@@ -77,10 +77,14 @@ fun TimeLetterBlockItem(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     val receiverText =
-                        letter.receiverIds
-                            .mapNotNull { receiverNameMap[it] }
-                            .joinToString(", ")
-                            .ifEmpty { "${letter.receiverIds.size}명" }
+                        if (letter.receiverIds.isEmpty()) {
+                            "수신자 정보 없음"
+                        } else {
+                            letter.receiverIds
+                                .mapNotNull { receiverNameMap[it] }
+                                .joinToString(", ")
+                                .ifEmpty { "${letter.receiverIds.size}명" }
+                        }
                     Text(
                         text = "수신인  $receiverText",
                         style = AfternoteDesign.typography.footnoteCaption,
@@ -92,7 +96,7 @@ fun TimeLetterBlockItem(
                         style = AfternoteDesign.typography.footnoteCaption,
                         color = AfternoteDesign.colors.gray6,
                     )
-                    Spacer(modifier = Modifier.width(43.dp))
+                    Spacer(modifier = Modifier.width(19.dp))
                     Box {
                         Image(
                             painterResource(com.afternote.feature.timeletter.presentation.R.drawable.setting),
