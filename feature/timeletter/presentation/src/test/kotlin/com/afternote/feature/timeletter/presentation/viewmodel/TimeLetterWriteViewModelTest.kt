@@ -188,6 +188,21 @@ class TimeLetterWriteViewModelTest {
             assertTrue(viewModel.uiState.value.registered)
         }
 
+    @Test
+    fun `only a scheduled letter is marked as scheduled edit`() =
+        runTest {
+            // 예약 편지 수정만 이탈 시 임시저장을 권하지 않는다 — 임시저장이 예약을 DRAFT 로 풀기 때문이다 (#576).
+            val scheduled = testEditingLetter(status = TimeLetterStatus.SCHEDULED)
+            val scheduledViewModel =
+                viewModel(FakeTimeLetterRepository(details = mapOf(scheduled.id to scheduled)), scheduled.id)
+            val draft = testEditingLetter(status = TimeLetterStatus.DRAFT)
+            val draftViewModel = viewModel(FakeTimeLetterRepository(details = mapOf(draft.id to draft)), draft.id)
+            advanceUntilIdle()
+
+            assertTrue(scheduledViewModel.uiState.value.isEditingScheduledLetter)
+            assertFalse(draftViewModel.uiState.value.isEditingScheduledLetter)
+        }
+
     private fun viewModel(
         repository: FakeTimeLetterRepository,
         editingTimeLetterId: Long? = null,

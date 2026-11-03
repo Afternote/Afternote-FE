@@ -10,6 +10,7 @@ import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.net.Uri
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -52,11 +53,13 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateMap
@@ -67,6 +70,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -150,6 +154,7 @@ fun TimeLetterWriteScreen(
     onFreePlanLimitDismiss: () -> Unit = {},
 ) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
     val sheetState = rememberModalBottomSheetState()
     var showMediaSheet by remember { mutableStateOf(false) }
@@ -276,6 +281,30 @@ fun TimeLetterWriteScreen(
         return
     }
 
+    // 작성 도중 이탈 가드 (#576): 진입 시점 스냅샷 대비 변경이 있으면 뒤로가기 시 이탈 확인 팝업을 띄운다.
+    // 애프터노트 에디터(#503)와 같은 방식이다. '내용 존재'가 아니라 '변경' 기준이라 수정 모드에서 무변경
+    // 이탈에는 경고하지 않는다. 스냅샷은 수신인 선택 왕복·프로세스 복원에도 유지되도록 saveable 로 둔다.
+    // 팝업 단계는 [ExitConfirmStep] 참고.
+    var exitConfirmStep by rememberSaveable { mutableStateOf<ExitConfirmStep?>(null) }
+    var baselineContentSignature by rememberSaveable { mutableStateOf<String?>(null) }
+    val hasUnsavedChanges by remember(uiState) {
+        derivedStateOf {
+            baselineContentSignature != null &&
+                writeContentSignature(titleState.text.toString(), collectTextContents(), uiState) !=
+                baselineContentSignature
+        }
+    }
+    val onBackAttempt: () -> Unit = {
+        focusManager.clearFocus()
+        when {
+            !hasUnsavedChanges -> onBackClick()
+            uiState.isEditingScheduledLetter -> exitConfirmStep = ExitConfirmStep.DiscardEdit
+            else -> exitConfirmStep = ExitConfirmStep.SaveDraft
+        }
+    }
+    // 변경이 없을 때는 시스템 기본 뒤로가기를 유지한다 (predictive back 애니메이션 보존).
+    BackHandler(enabled = hasUnsavedChanges) { onBackAttempt() }
+
     // Apply the loaded title once per editing destination. Keying this to draftTitle would
     // overwrite the user's input whenever the draft is synchronized back to the ViewModel.
     LaunchedEffect(uiState.editingTimeLetterId) {
@@ -283,6 +312,57 @@ fun TimeLetterWriteScreen(
             titleState.edit {
                 replace(0, length, uiState.draftTitle.orEmpty())
             }
+        }
+        // 수정 모드는 불러온 제목을 채운 뒤에 스냅샷을 잡아야 무변경 이탈이 변경으로 읽히지 않는다.
+        if (baselineContentSignature == null) {
+            baselineContentSignature =
+                writeContentSignature(titleState.text.toString(), collectTextContents(), uiState)
+        }
+    }
+
+    when (exitConfirmStep) {
+        ExitConfirmStep.SaveDraft -> {
+            Popup(
+                type = PopupType.Variant2,
+                message = stringResource(R.string.timeletter_write_exit_save_draft_message),
+                // 하단 «임시저장» 버튼과 같은 경로 — 성공하면 savedAsDraft 로 나가고, 수신인 누락·저장
+                // 실패면 오류 스낵바를 띄운 채 작성 화면에 남는다.
+                onConfirm = {
+                    exitConfirmStep = null
+                    onDraftClick(titleState.text.toString(), collectTextContents())
+                },
+                onDismiss = { exitConfirmStep = ExitConfirmStep.Discard },
+            )
+        }
+
+        ExitConfirmStep.Discard -> {
+            Popup(
+                type = PopupType.Variant2,
+                message = stringResource(R.string.timeletter_write_exit_discard_message),
+                onConfirm = {
+                    exitConfirmStep = null
+                    onBackClick()
+                },
+                onDismiss = { exitConfirmStep = null },
+                dismissText = stringResource(R.string.timeletter_write_exit_cancel),
+            )
+        }
+
+        ExitConfirmStep.DiscardEdit -> {
+            Popup(
+                type = PopupType.Variant2,
+                message = stringResource(R.string.timeletter_write_exit_discard_edit_message),
+                onConfirm = {
+                    exitConfirmStep = null
+                    onBackClick()
+                },
+                onDismiss = { exitConfirmStep = null },
+                dismissText = stringResource(R.string.timeletter_write_exit_cancel),
+            )
+        }
+
+        null -> {
+            Unit
         }
     }
 
@@ -472,7 +552,7 @@ fun TimeLetterWriteScreen(
         topBar = {
             DetailTopBar(
                 title = "타임레터",
-                onBackClick = onBackClick,
+                onBackClick = onBackAttempt,
                 actions = {
                     TimeLetterTextButton(
                         text = if (uiState.editingTimeLetterId == null) "등록" else "수정",
@@ -582,6 +662,43 @@ fun TimeLetterWriteScreen(
         }
     }
 }
+
+/**
+ * 변경이 있는 채로 뒤로가기를 눌렀을 때의 이탈 확인 단계 (#576).
+ *
+ * - 새 편지·임시저장 편지: [SaveDraft] 「예」는 임시저장, 「아니요」는 [Discard] 로 넘어가 한 번 더 묻는다.
+ * - 예약 편지 수정: [DiscardEdit] 하나만 묻는다. 임시저장을 권하면 예약이 DRAFT 로 풀린다.
+ */
+private enum class ExitConfirmStep {
+    SaveDraft,
+    Discard,
+    DiscardEdit,
+}
+
+/**
+ * 이탈 가드가 비교하는 작성 내용 지문. 화면 정렬처럼 보내지 않는 값은 넣지 않는다.
+ * 텍스트 블록은 블록 순서대로, 미디어 블록은 가리키는 대상으로 비교한다.
+ */
+internal fun writeContentSignature(
+    title: String,
+    textContents: Map<Long, String>,
+    uiState: TimeLetterWriteUiState,
+): String =
+    listOf(
+        title,
+        uiState.editorBlocks.joinToString("\u0001") { block ->
+            when (block) {
+                is EditorBlock.Text -> "T:${textContents[block.id].orEmpty()}"
+                is EditorBlock.Image -> "I:${block.uri}"
+                is EditorBlock.Audio -> "A:${block.uri}"
+                is EditorBlock.File -> "F:${block.uri}"
+                is EditorBlock.Link -> "L:${block.url}"
+            }
+        },
+        uiState.recipientIds.joinToString(","),
+        uiState.sendAt.orEmpty(),
+        uiState.sendTime.orEmpty(),
+    ).joinToString("\u0002")
 
 internal fun collectTextBlockContents(
     editorBlocks: List<EditorBlock>,
