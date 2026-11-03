@@ -26,7 +26,7 @@ import org.junit.Test
  *
  * stdlib `runCatching` 은 `CancellationException` 까지 잡아 정상 반환으로 바꾼다. 그러면
  * 이미 취소된 코루틴에서 호출부의 `onFailure` 갈래(오류 상태 갱신·스낵바)가 실행된다.
- * `core:common` 의 `runCatchingCancellable` 은 취소만 다시 던지므로 호출 지점에서 그대로 빠져나간다.
+ * `core:domain` 의 `runCatchingCancellable` 은 취소만 다시 던지므로 호출 지점에서 그대로 빠져나간다.
  *
  * 판정 기준은 "반환값이 대입되지 않는 것" 이다 — 취소된 Job 은 어느 쪽이든 `isCancelled` 라
  * 그것만으로는 두 동작을 구분할 수 없다.
