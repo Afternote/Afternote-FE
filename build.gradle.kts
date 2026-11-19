@@ -128,7 +128,7 @@ val securityFloors =
             SecurityFloor(
                 module = "com.google.guava:guava",
                 version = libs.versions.guavaAndroid.get(),
-                because = "GHSA-7g45-4rm6-3mm3·GHSA-5mg8-w23w-74h3: 접근성 테스트의 31.0.1-android 취약, #2219",
+                because = "GHSA-7g45-4rm6-3mm3·GHSA-5mg8-w23w-74h3: 접근성 테스트의 31.0.1-android 취약, #2219 · GHSA-xxph-c9ww-hj94: 33.4.0-jre 취약, #2325",
             ),
             SecurityFloor(
                 module = "org.jsoup:jsoup",
