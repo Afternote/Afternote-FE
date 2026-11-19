@@ -15177,11 +15177,6 @@ HSPLcom/afternote/afternote_fe/startup/KakaoInitializer;->create(Landroid/conten
 HSPLcom/afternote/afternote_fe/startup/KakaoInitializer;->create(Landroid/content/Context;)V
 HSPLcom/afternote/afternote_fe/startup/KakaoInitializer;->dependencies()Ljava/util/List;
 Lcom/afternote/core/common/R$drawable;
-Lcom/afternote/core/common/notification/DailyNotificationWorker;
-Lcom/afternote/core/common/notification/NotificationScheduler;
-HSPLcom/afternote/core/common/notification/NotificationScheduler;-><clinit>()V
-HSPLcom/afternote/core/common/notification/NotificationScheduler;-><init>()V
-HSPLcom/afternote/core/common/notification/NotificationScheduler;->scheduleDailyNotification(Landroid/content/Context;II)V
 Lcom/afternote/core/common/reporting/ErrorReporter;
 Lcom/afternote/core/data/repoimpl/UserRepositoryImpl;
 HSPLcom/afternote/core/data/repoimpl/UserRepositoryImpl;-><init>(Lcom/afternote/core/network/service/UserApiService;Lcom/afternote/core/domain/repository/auth/AuthRepository;Lcom/afternote/core/common/reporting/ErrorReporter;)V
